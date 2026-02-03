@@ -2,7 +2,7 @@
 
 CSCI 520, Assignment 1
 
-Richard Wang
+<Your name>
 
 ================
 
