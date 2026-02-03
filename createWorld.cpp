@@ -172,16 +172,16 @@ int main()
   // set the positions of control points
   for (i=0; i<=7; i++)
     for (j=0; j<=7; j++)
-	    for (k=0; k<=7; k++)
+      for (k=0; k<=7; k++)
       {
         jello.p[i][j][k].x=1.0 * i / 7;
-	  	  jello.p[i][j][k].y=1.0 * j / 7;
-		    jello.p[i][j][k].z=1.0 * k / 7;
+        jello.p[i][j][k].y=1.0 * j / 7;
+        jello.p[i][j][k].z=1.0 * k / 7;
         if ((i==7) && (j==7) && (k==7))
         {
           jello.p[i][j][k].x=1.0 + 1.0 / 7;
-	    	  jello.p[i][j][k].y=1.0 + 1.0 / 7;
-		      jello.p[i][j][k].z=1.0 + 1.0 / 7;
+          jello.p[i][j][k].y=1.0 + 1.0 / 7;
+          jello.p[i][j][k].z=1.0 + 1.0 / 7;
         }
 
 
@@ -193,8 +193,8 @@ int main()
       for (k=0; k<=7; k++)
       {
         jello.v[i][j][k].x=10.0;
-	  	  jello.v[i][j][k].y=-10.0;
-		    jello.v[i][j][k].z=20.0;
+        jello.v[i][j][k].y=-10.0;
+        jello.v[i][j][k].z=20.0;
       }
 
   // write the jello variable out to file on disk
