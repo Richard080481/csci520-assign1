@@ -217,7 +217,15 @@ void doIdle()
 
   if (pause == 0)
   {
-    // insert code which appropriately performs one step of the cube simulation:
+    // perform one time step of the simulation
+      if (strcmp(jello.integrator, "Euler") == 0)
+      {
+          Euler(&jello);
+      }
+      else
+      {
+          RK4(&jello);
+      }
   }
 
   glutPostRedisplay();

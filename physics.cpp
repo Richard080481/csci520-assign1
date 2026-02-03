@@ -14,6 +14,14 @@
 void computeAcceleration(struct world * jello, struct point a[8][8][8])
 {
   /* for you to implement ... */
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            for(int k = 0; k < 8; k++) {
+                // For now, just set acceleration to zero
+                pCPY(jello->p[i][j][k], a[i][j][k]);
+            }
+        }
+	}
 }
 
 /* performs one step of Euler Integration */
