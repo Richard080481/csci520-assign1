@@ -9,7 +9,7 @@
  *    size is sufficient), else a new pixel array is allocated.
  * Great caution should be used when freeing, if pix memory is reused!
  */
-Pic *pic_alloc(int nx, int ny, int bytes_per_pixel, Pic *opic) 
+Pic *pic_alloc(int nx, int ny, int bytes_per_pixel, Pic *opic)
 {
   Pic *p;
   int size = ny*nx*bytes_per_pixel;
@@ -18,7 +18,7 @@ Pic *pic_alloc(int nx, int ny, int bytes_per_pixel, Pic *opic)
   p->nx = nx;
   p->ny = ny;
   p->bpp = bytes_per_pixel;
-  if (opic && opic->nx*opic->ny*opic->bpp >= p->nx*p->ny*p->bpp) 
+  if (opic && opic->nx*opic->ny*opic->bpp >= p->nx*p->ny*p->bpp)
   {
     p->pix = opic->pix;
     /* now opic and p have a common pix array */
@@ -28,7 +28,7 @@ Pic *pic_alloc(int nx, int ny, int bytes_per_pixel, Pic *opic)
   return p;
 }
 
-void pic_free(Pic *p) 
+void pic_free(Pic *p)
 {
   free(p->pix);
   free(p);
@@ -59,14 +59,14 @@ Pic_file_format pic_file_type(char *file)
   return PIC_PPM_FILE;
 
 /*
- for (i = 0; i < 10; i++) 
+ for (i = 0; i < 10; i++)
    byte[i] = getc(pic);
-		
+
   fclose(pic);
-		
+
   if( byte[0]=='P' && (byte[1]=='3' || byte[1]=='6') )
     return PIC_PPM_FILE;
-  else 
+  else
     if( (byte[0]==0x4d && byte[1]==0x4d) || (byte[0]==0x49 && byte[1]==0x49) )
       return PIC_TIFF_FILE;
     else if ( byte[0]==0xff && byte[1]==0xd8 && byte[2]==0xff && byte[3]==0xe0 && strncmp(&byte[6], "JFIF", 4))
@@ -94,7 +94,7 @@ int pic_get_size(char *file, int *nx, int *ny)
     case PIC_TIFF_FILE:
 	//return tiff_get_size(file, nx, ny);
     break;
-			
+
     case PIC_PPM_FILE:
 	return ppm_get_size(file, nx, ny);
     break;
@@ -102,7 +102,7 @@ int pic_get_size(char *file, int *nx, int *ny)
     case PIC_JPEG_FILE:
 	//return jpeg_get_size(file, nx, ny);
     break;
-			
+
     default:
         return FALSE;
   }
@@ -122,7 +122,7 @@ Pic *pic_read(char *file, Pic *opic)
     case PIC_TIFF_FILE:
       //return tiff_read(file, opic);
     break;
-			
+
     case PIC_PPM_FILE:
       return ppm_read(file, opic);
     break;
@@ -147,7 +147,7 @@ int pic_write(char *file, Pic *pic, Pic_file_format format)
     case PIC_TIFF_FILE:
       //return tiff_write(file, pic);
     break;
-			
+
     case PIC_PPM_FILE:
       return ppm_write(file, pic);
     break;
@@ -155,7 +155,7 @@ int pic_write(char *file, Pic *pic, Pic_file_format format)
     case PIC_JPEG_FILE:
      //return jpeg_write(file, pic);
     break;
-			
+
     default:
       fprintf(stderr, "pic_write: can't write %s, unknown format\n", file);
       return FALSE;

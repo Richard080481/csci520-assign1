@@ -17,7 +17,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-struct point 
+struct point
 {
    double x;
    double y;
@@ -58,21 +58,21 @@ void writeWorld(const char * fileName, struct world * jello)
 {
   int i,j,k;
   FILE * file;
-  
+
   file = fopen(fileName, "w");
   if (file == NULL) {
     printf ("can't open file\n");
     exit(1);
   }
 
-  /* write integrator algorithm */ 
+  /* write integrator algorithm */
   fprintf(file,"%s\n",jello->integrator);
 
   /* write timestep */
   fprintf(file,"%lf %d\n",jello->dt,jello->n);
 
   /* write physical parameters */
-  fprintf(file, "%lf %lf %lf %lf\n", 
+  fprintf(file, "%lf %lf %lf %lf\n",
     jello->kElastic, jello->dElastic, jello->kCollision, jello->dCollision);
 
   /* write mass */
@@ -89,11 +89,11 @@ void writeWorld(const char * fileName, struct world * jello)
     for (i=0; i<= jello->resolution-1; i++)
       for (j=0; j<= jello->resolution-1; j++)
         for (k=0; k<= jello->resolution-1; k++)
-          fprintf(file, "%lf %lf %lf\n", 
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x, 
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y, 
+          fprintf(file, "%lf %lf %lf\n",
+             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x,
+             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y,
              jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].z);
-  
+
 
   /* write initial point positions */
   for (i = 0; i <= 7 ; i++)
@@ -101,24 +101,24 @@ void writeWorld(const char * fileName, struct world * jello)
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fprintf(file, "%lf %lf %lf\n", 
+        fprintf(file, "%lf %lf %lf\n",
           jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
     }
   }
-      
+
   /* write initial point velocities */
   for (i = 0; i <= 7 ; i++)
   {
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fprintf(file, "%lf %lf %lf\n", 
+        fprintf(file, "%lf %lf %lf\n",
           jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
     }
   }
 
   fclose(file);
-  
+
   return;
 }
 
@@ -149,7 +149,7 @@ int main()
 
   // set the external force field
   jello.resolution=30;
-  jello.forceField = 
+  jello.forceField =
     (struct point *)malloc(jello.resolution*jello.resolution*jello.resolution*sizeof(struct point));
   for (i=0; i<= jello.resolution-1; i++)
     for (j=0; j<= jello.resolution-1; j++)
@@ -161,11 +161,11 @@ int main()
         y = -2 + 4*(1.0 * j / (jello.resolution-1));
         z = -2 + 4*(1.0 * k / (jello.resolution-1));
 
-        jello.forceField[i * jello.resolution * jello.resolution 
-          + j * jello.resolution + k].x = 0; 
-        jello.forceField[i * jello.resolution * jello.resolution 
+        jello.forceField[i * jello.resolution * jello.resolution
+          + j * jello.resolution + k].x = 0;
+        jello.forceField[i * jello.resolution * jello.resolution
           + j * jello.resolution + k].y = 0;
-        jello.forceField[i * jello.resolution * jello.resolution 
+        jello.forceField[i * jello.resolution * jello.resolution
           + j * jello.resolution + k].z = 0;
       }
 
@@ -183,7 +183,7 @@ int main()
 	    	  jello.p[i][j][k].y=1.0 + 1.0 / 7;
 		      jello.p[i][j][k].z=1.0 + 1.0 / 7;
         }
- 
+
 
       }
 

@@ -1,4 +1,4 @@
-# Jello cube Makefile 
+# Jello cube Makefile
 # Jernej Barbic, USC
 
 
@@ -6,9 +6,9 @@ KERNEL=$(shell uname -s)
 
 ifeq ($(KERNEL),Linux)
 	LIBRARIES = -lGL -lGLU -lglut
-else 
+else
 ifeq ($(KERNEL),Darwin)
-	LIBRARIES = -framework OpenGL -framework GLUT 
+	LIBRARIES = -framework OpenGL -framework GLUT
 endif
 endif
 

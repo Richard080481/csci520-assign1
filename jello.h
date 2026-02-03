@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define pi 3.141592653589793238462643383279 
+#define pi 3.141592653589793238462643383279
 
 // camera angles
 extern double Theta;
@@ -30,7 +30,7 @@ extern int sprite;
 extern int g_vMousePos[2];
 extern int g_iLeftMouseButton,g_iMiddleMouseButton,g_iRightMouseButton;
 
-struct point 
+struct point
 {
    double x;
    double y;
@@ -96,7 +96,7 @@ extern struct world jello;
   (dest).x = (source).x;\
   (dest).y = (source).y;\
   (dest).z = (source).z;
-  
+
 // assigns values x,y,z to point vector dest
 // struct point dest
 // double x,y,z

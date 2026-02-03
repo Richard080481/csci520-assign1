@@ -48,7 +48,7 @@ typedef struct {		/* PICTURE */
     /* returns channel chan of pixel (x,y) of picture pic */
     /* usually chan=0 for red, 1 for green, 2 for blue */
 
-typedef enum {PIC_TIFF_FILE, PIC_PPM_FILE, PIC_JPEG_FILE, PIC_UNKNOWN_FILE} Pic_file_format; // only PPM is supported 
+typedef enum {PIC_TIFF_FILE, PIC_PPM_FILE, PIC_JPEG_FILE, PIC_UNKNOWN_FILE} Pic_file_format; // only PPM is supported
 
 /*----------------------Allocation routines--------------------------*/
 extern Pic *pic_alloc(int nx, int ny, int bytes_per_pixel, Pic *opic);

@@ -14,12 +14,12 @@ void saveScreenshot(int windowWidth, int windowHeight, char *filename)
   if (filename == NULL)
     return;
 
-  // Allocate a picture buffer 
+  // Allocate a picture buffer
   Pic * in = pic_alloc(windowWidth, windowHeight, 3, NULL);
 
   printf("File to save to: %s\n", filename);
 
-  for (int i=windowHeight-1; i>=0; i--) 
+  for (int i=windowHeight-1; i>=0; i--)
   {
     glReadPixels(0, windowHeight-i-1, windowWidth, 1, GL_RGB, GL_UNSIGNED_BYTE,
       &in->pix[i*in->nx*in->bpp]);
@@ -42,19 +42,19 @@ void mouseMotionDrag(int x, int y)
   {
     Phi += vMouseDelta[0] * 0.01;
     Theta += vMouseDelta[1] * 0.01;
-    
+
     if (Phi>2*pi)
       Phi -= 2*pi;
-    
+
     if (Phi<0)
       Phi += 2*pi;
-    
+
     if (Theta>pi / 2 - 0.01) // dont let the point enter the north pole
       Theta = pi / 2 - 0.01;
-    
+
     if (Theta<- pi / 2 + 0.01)
       Theta = -pi / 2 + 0.01;
-    
+
     g_vMousePos[0] = x;
     g_vMousePos[1] = y;
   }
@@ -80,7 +80,7 @@ void mouseButton(int button, int state, int x, int y)
       g_iRightMouseButton = (state==GLUT_DOWN);
       break;
   }
- 
+
   g_vMousePos[0] = x;
   g_vMousePos[1] = y;
 }
@@ -146,22 +146,22 @@ void readWorld (char * fileName, struct world * jello)
 {
   int i,j,k;
   FILE * file;
-  
+
   file = fopen(fileName, "r");
   if (file == NULL) {
     printf ("can't open file\n");
     exit(1);
   }
- 
-/* 
+
+/*
 
   File should first contain a line specifying the integrator (EULER or RK4).
   Example: EULER
-  
+
   Then, follows one line specifying the size of the timestep for the integrator, and
   an integer parameter n specifying  that every nth timestep will actually be drawn
   (the other steps will only be used for internal calculation)
-  
+
   Example: 0.001 5
   Now, timestep equals 0.001. Every fifth time point will actually be drawn,
   i.e. frame1 <--> t = 0
@@ -169,7 +169,7 @@ void readWorld (char * fileName, struct world * jello)
   frame3 <--> t = 0.010
   frame4 <--> t = 0.015
   ...
-  
+
   Then, there should be two lines for physical parameters and external acceleration.
   Format is:
     kElastic dElastic kCollision dCollision
@@ -179,14 +179,14 @@ void readWorld (char * fileName, struct world * jello)
     dElastic = damping coefficient of the spring (same for all springs except collision springs)
     kCollision = elastic coefficient of collision springs (same for all collision springs)
     dCollision = damping coefficient of collision springs (same for all collision springs)
-    mass = mass in kilograms for each of the 512 mass points 
+    mass = mass in kilograms for each of the 512 mass points
     (mass assumed to be the same for all the points; total mass of the jello cube = 512 * mass)
-  
+
   Example:
     10000 25 10000 15
     0.002
-  
-  Then, there should be one or two lines for the inclined plane, with the obvious syntax. 
+
+  Then, there should be one or two lines for the inclined plane, with the obvious syntax.
   If there is no inclined plane, there should be only one line with a 0 value. There
   is no line for the coefficient. Otherwise, there are two lines, first one containing 1,
   and the second one containing the coefficients.
@@ -194,28 +194,28 @@ void readWorld (char * fileName, struct world * jello)
   Example:
     1
     0.31 -0.78 0.5 5.39
-  
+
   Next is the forceField block, first with the resolution and then the data, one point per row.
   Example:
     30
     <here 30 * 30 * 30 = 27 000 lines follow, each containing 3 real numbers>
-  
+
   After this, there should be 1024 lines, each containing three floating-point numbers.
   The first 512 lines correspond to initial point locations.
   The last 512 lines correspond to initial point velocities.
-  
+
   There should no blank lines anywhere in the file.
 
 */
-       
-  /* read integrator algorithm */ 
+
+  /* read integrator algorithm */
   fscanf(file,"%s\n",&jello->integrator);
 
   /* read timestep size and render */
   fscanf(file,"%lf %d\n",&jello->dt,&jello->n);
 
   /* read physical parameters */
-  fscanf(file, "%lf %lf %lf %lf\n", 
+  fscanf(file, "%lf %lf %lf %lf\n",
     &jello->kElastic, &jello->dElastic, &jello->kCollision, &jello->dCollision);
 
   /* read mass of each of the 512 points */
@@ -228,42 +228,42 @@ void readWorld (char * fileName, struct world * jello)
 
   /* read info about the force field */
   fscanf(file, "%d\n", &jello->resolution);
-  jello->forceField = 
+  jello->forceField =
     (struct point *)malloc(jello->resolution*jello->resolution*jello->resolution*sizeof(struct point));
   if (jello->resolution != 0)
     for (i=0; i<= jello->resolution-1; i++)
       for (j=0; j<= jello->resolution-1; j++)
         for (k=0; k<= jello->resolution-1; k++)
-          fscanf(file, "%lf %lf %lf\n", 
-             &jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x, 
-             &jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y, 
+          fscanf(file, "%lf %lf %lf\n",
+             &jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x,
+             &jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y,
              &jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].z);
-             
-  
+
+
   /* read initial point positions */
   for (i= 0; i <= 7 ; i++)
   {
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fscanf(file, "%lf %lf %lf\n", 
+        fscanf(file, "%lf %lf %lf\n",
           &jello->p[i][j][k].x, &jello->p[i][j][k].y, &jello->p[i][j][k].z);
     }
   }
-      
+
   /* read initial point velocities */
   for (i = 0; i <= 7 ; i++)
   {
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fscanf(file, "%lf %lf %lf\n", 
+        fscanf(file, "%lf %lf %lf\n",
           &jello->v[i][j][k].x, &jello->v[i][j][k].y, &jello->v[i][j][k].z);
     }
   }
 
   fclose(file);
-  
+
   return;
 }
 
@@ -276,25 +276,25 @@ void writeWorld (char * fileName, struct world * jello)
 {
   int i,j,k;
   FILE * file;
-  
+
   file = fopen(fileName, "w");
   if (file == NULL) {
     printf ("can't open file\n");
     exit(1);
   }
 
-  /* write integrator algorithm */ 
+  /* write integrator algorithm */
   fprintf(file,"%s\n",jello->integrator);
 
   /* write timestep */
   fprintf(file,"%lf %d\n",jello->dt,jello->n);
 
   /* write physical parameters */
-  fprintf(file, "%lf %lf %lf %lf\n", 
+  fprintf(file, "%lf %lf %lf %lf\n",
     jello->kElastic, jello->dElastic, jello->kCollision, jello->dCollision);
 
   /* write mass */
-  fprintf(file, "%lf\n", 
+  fprintf(file, "%lf\n",
     jello->mass);
 
   /* write info about the plane */
@@ -308,11 +308,11 @@ void writeWorld (char * fileName, struct world * jello)
     for (i=0; i<= jello->resolution-1; i++)
       for (j=0; j<= jello->resolution-1; j++)
         for (k=0; k<= jello->resolution-1; k++)
-          fprintf(file, "%lf %lf %lf\n", 
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x, 
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y, 
+          fprintf(file, "%lf %lf %lf\n",
+             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x,
+             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y,
              jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].z);
-  
+
 
 
   /* write initial point positions */
@@ -321,24 +321,24 @@ void writeWorld (char * fileName, struct world * jello)
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fprintf(file, "%lf %lf %lf\n", 
+        fprintf(file, "%lf %lf %lf\n",
           jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
     }
   }
-      
+
   /* write initial point velocities */
   for (i = 0; i <= 7 ; i++)
   {
     for (j = 0; j <= 7; j++)
     {
       for (k = 0; k <= 7; k++)
-        fprintf(file, "%lf %lf %lf\n", 
+        fprintf(file, "%lf %lf %lf\n",
           jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
     }
   }
 
   fclose(file);
-  
+
   return;
 }
 

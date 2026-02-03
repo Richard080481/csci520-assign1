@@ -1,4 +1,4 @@
-#if defined(WIN32)  || defined(_WIN32) 
+#if defined(WIN32)  || defined(_WIN32)
 #include <Windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>

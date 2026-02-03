@@ -49,10 +49,10 @@ void myinit()
   glEnable(GL_POLYGON_SMOOTH);
   glEnable(GL_LINE_SMOOTH);
 
-  return; 
+  return;
 }
 
-void reshape(int w, int h) 
+void reshape(int w, int h)
 {
   // Prevent a divide by zero, when h is zero.
   // You can't make a window of zero height.
@@ -69,7 +69,7 @@ void reshape(int w, int h)
   gluPerspective(60.0f, aspectRatio, 0.01f, 1000.0f);
 
   glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity(); 
+  glLoadIdentity();
 
   windowWidth = w;
   windowHeight = h;
@@ -91,13 +91,13 @@ void display()
 
   /* Lighting */
   /* You are encouraged to change lighting parameters or make improvements/modifications
-     to the lighting model . 
-     This way, you will personalize your assignment and your assignment will stick out. 
+     to the lighting model .
+     This way, you will personalize your assignment and your assignment will stick out.
   */
 
   // global ambient light
   GLfloat aGa[] = { 0.0, 0.0, 0.0, 0.0 };
-  
+
   // light 's ambient, diffuse, specular
   GLfloat lKa0[] = { 0.0, 0.0, 0.0, 1.0 };
   GLfloat lKd0[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -140,7 +140,7 @@ void display()
   GLfloat lP5[] = { 1.999, -1.999, 1.999, 1.0 };
   GLfloat lP6[] = { 1.999, 1.999, 1.999, 1.0 };
   GLfloat lP7[] = { -1.999, 1.999, 1.999, 1.0 };
-  
+
   // jelly material color
 
   GLfloat mKa[] = { 0.0, 0.0, 0.0, 1.0 };
@@ -159,7 +159,7 @@ void display()
   glMaterialfv(GL_FRONT, GL_SPECULAR, mKs);
   glMaterialfv(GL_FRONT, GL_EMISSION, mKe);
   glMaterialf(GL_FRONT, GL_SHININESS, 120);
-    
+
   // macro to set up light i
   #define LIGHTSETUP(i)\
   glLightfv(GL_LIGHT##i, GL_POSITION, lP##i);\
@@ -167,7 +167,7 @@ void display()
   glLightfv(GL_LIGHT##i, GL_DIFFUSE, lKd##i);\
   glLightfv(GL_LIGHT##i, GL_SPECULAR, lKs##i);\
   glEnable(GL_LIGHT##i)
-  
+
   LIGHTSETUP (0);
   LIGHTSETUP (1);
   LIGHTSETUP (2);
@@ -178,7 +178,7 @@ void display()
   LIGHTSETUP (7);
 
   // enable lighting
-  glEnable(GL_LIGHTING);    
+  glEnable(GL_LIGHTING);
   glEnable(GL_DEPTH_TEST);
 
   // show the cube
@@ -188,7 +188,7 @@ void display()
 
   // show the bounding box
   showBoundingBox();
- 
+
   glutSwapBuffers();
 }
 
@@ -196,7 +196,7 @@ void doIdle()
 {
   char s[20]="picxxxx.ppm";
   int i;
-  
+
   // save screen to file
   s[3] = 48 + (sprite / 1000);
   s[4] = 48 + (sprite % 1000) / 100;
@@ -212,7 +212,7 @@ void doIdle()
 
   if (sprite >= 300) // allow only 300 snapshots
   {
-    exit(0);	
+    exit(0);
   }
 
   if (pause == 0)
@@ -226,7 +226,7 @@ void doIdle()
 int main (int argc, char ** argv)
 {
   if (argc<2)
-  {  
+  {
     printf ("Oops! You didn't say the jello world file!\n");
     printf ("Usage: %s [worldfile]\n", argv[0]);
     exit(0);
@@ -235,10 +235,10 @@ int main (int argc, char ** argv)
   readWorld(argv[1],&jello);
 
   glutInit(&argc,argv);
-  
+
   /* double buffered window, use depth testing, 640x480 */
   glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-  
+
   windowWidth = 640;
   windowHeight = 480;
   glutInitWindowSize (windowWidth, windowHeight);

@@ -133,7 +133,7 @@ int ppm_write(char *file, Pic *pic)
 
     /* Always write a raw PPM file */
     fprintf(ppm, "P6 %d %d 255\n", pic->nx, pic->ny);
-    
+
     if (fwrite(pic->pix, pic->nx*3, pic->ny, ppm) != pic->ny) {
 	fprintf(stderr, "ppm_write: error writing %s\n", file);
 	fclose(ppm);
