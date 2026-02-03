@@ -4,7 +4,7 @@
   "Jello Cube" Assignment 1 starter code
 
   Your name:
-  <write your name here>
+  Richard Wang
 
 */
 
