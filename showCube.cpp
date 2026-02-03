@@ -41,7 +41,7 @@ void showCube(struct world * jello)
 {
   int i,j,k,ip,jp,kp;
   point r1,r2,r3; // aux variables
-  
+
   /* normals buffer and counter for Gourad shading*/
   struct point normal[8][8];
   int counter[8][8];
@@ -55,10 +55,10 @@ void showCube(struct world * jello)
     exit(0);
   }
 
-  
+
   #define NODE(face,i,j) (*((struct point * )(jello->p) + pointMap((face),(i),(j))))
 
-  
+
   #define PROCESS_NEIGHBOUR(di,dj,dk) \
     ip=i+(di);\
     jp=j+(dj);\
@@ -73,7 +73,7 @@ void showCube(struct world * jello)
       glVertex3f(jello->p[ip][jp][kp].x,jello->p[ip][jp][kp].y,jello->p[ip][jp][kp].z);\
     }\
 
- 
+
   if (viewingMode==0) // render wireframe
   {
     glLineWidth(1);
@@ -87,15 +87,15 @@ void showCube(struct world * jello)
             continue;
 
           glBegin(GL_POINTS); // draw point
-            glColor4f(0,0,0,0);  
-            glVertex3f(jello->p[i][j][k].x,jello->p[i][j][k].y,jello->p[i][j][k].z);        
+            glColor4f(0,0,0,0);
+            glVertex3f(jello->p[i][j][k].x,jello->p[i][j][k].y,jello->p[i][j][k].z);
           glEnd();
 
           //
           //if ((i!=7) || (j!=7) || (k!=7))
           //  continue;
 
-          glBegin(GL_LINES);      
+          glBegin(GL_LINES);
           // structural
           if (structural == 1)
           {
@@ -107,7 +107,7 @@ void showCube(struct world * jello)
             PROCESS_NEIGHBOUR(0,-1,0);
             PROCESS_NEIGHBOUR(0,0,-1);
           }
-          
+
           // shear
           if (shear == 1)
           {
@@ -134,7 +134,7 @@ void showCube(struct world * jello)
             PROCESS_NEIGHBOUR(-1,-1,-1)
             PROCESS_NEIGHBOUR(1,-1,-1)
           }
-          
+
           // bend
           if (bend == 1)
           {
@@ -145,26 +145,26 @@ void showCube(struct world * jello)
             PROCESS_NEIGHBOUR(-2,0,0);
             PROCESS_NEIGHBOUR(0,-2,0);
             PROCESS_NEIGHBOUR(0,0,-2);
-          }           
+          }
           glEnd();
         }
     glEnable(GL_LIGHTING);
   }
-  
+
   else
   {
-    glPolygonMode(GL_FRONT, GL_FILL); 
-    
-    for (face=1; face <= 6; face++) 
+    glPolygonMode(GL_FRONT, GL_FILL);
+
+    for (face=1; face <= 6; face++)
       // face == face of a cube
       // 1 = bottom, 2 = front, 3 = left, 4 = right, 5 = far, 6 = top
     {
-      
+
       if ((face==1) || (face==3) || (face==5))
         faceFactor=-1; // flip orientation
       else
         faceFactor=1;
-      
+
 
       for (i=0; i <= 7; i++) // reset buffers
         for (j=0; j <= 7; j++)
@@ -174,7 +174,7 @@ void showCube(struct world * jello)
         }
 
       /* process triangles, accumulate normals for Gourad shading */
-  
+
       for (i=0; i <= 6; i++)
         for (j=0; j <= 6; j++) // process block (i,j)
         {
@@ -201,16 +201,16 @@ void showCube(struct world * jello)
           counter[i+1][j+1]++;
         }
 
-      
+
         /* the actual rendering */
-        for (j=1; j<=7; j++) 
+        for (j=1; j<=7; j++)
         {
 
           if (faceFactor  > 0)
             glFrontFace(GL_CCW); // the usual definition of front face
           else
             glFrontFace(GL_CW); // flip definition of orientation
-         
+
           glBegin(GL_TRIANGLE_STRIP);
           for (i=0; i<=7; i++)
           {
@@ -223,9 +223,9 @@ void showCube(struct world * jello)
           }
           glEnd();
         }
-        
-        
-    }  
+
+
+    }
   } // end for loop over faces
   glFrontFace(GL_CCW);
 }
@@ -285,7 +285,7 @@ void showBoundingBox()
     glVertex3f(2,-2,j);
     glVertex3f(2,2,j);
   }
-  
+
   glEnd();
 
   return;
