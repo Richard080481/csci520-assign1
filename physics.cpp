@@ -82,7 +82,7 @@ void addStructuralForces(struct world* jello, int i, int j, int k, point* force)
 void addShearForces(struct world* jello, int i, int j, int k, point* force)
 {
     // Face diagonals (12 springs per point)
-    int shearNeighbors[12][3] = {
+    int planeShearNeighbors[12][3] = {
         // xy plane diagonals
         {1,1,0}, {1,-1,0}, {-1,1,0}, {-1,-1,0},
         // xz plane diagonals
@@ -92,20 +92,44 @@ void addShearForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length for face diagonals: sqrt(2)
-    double restLength = sqrt(2.0) / JELLO_SUBDIVISIONS;
+    double planeRestLength = sqrt(2.0) / JELLO_SUBDIVISIONS;
 
     for (int n = 0; n < 12; n++)
     {
-        int ni = i + shearNeighbors[n][0];
-        int nj = j + shearNeighbors[n][1];
-        int nk = k + shearNeighbors[n][2];
+        int ni = i + planeShearNeighbors[n][0];
+        int nj = j + planeShearNeighbors[n][1];
+        int nk = k + planeShearNeighbors[n][2];
 
         if (ni >= 0 && ni <= JELLO_SUBDIVISIONS && nj >= 0 && nj <= JELLO_SUBDIVISIONS && nk >= 0 && nk <= JELLO_SUBDIVISIONS)
         {
             computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
                 jello->v[i][j][k], jello->v[ni][nj][nk],
-                restLength,
+                planeRestLength,
                 jello->kElastic, jello->dElastic,
+                force);
+        }
+    }
+
+    int bodyShearNeighbors[8][3] = {
+        {1,1,1}, {1,1,-1}, {1,-1,1}, {1,-1,-1},
+        {-1,1,1}, {-1,1,-1}, {-1,-1,1}, {-1,-1,-1}
+    };
+
+    double bodyRestLength = sqrt(3.0) / JELLO_SUBDIVISIONS;
+
+    for (int n = 0; n < 8; n++)
+    {
+        int ni = i + bodyShearNeighbors[n][0];
+        int nj = j + bodyShearNeighbors[n][1];
+        int nk = k + bodyShearNeighbors[n][2];
+
+        if (ni >= 0 && ni <= JELLO_SUBDIVISIONS &&
+            nj >= 0 && nj <= JELLO_SUBDIVISIONS &&
+            nk >= 0 && nk <= JELLO_SUBDIVISIONS)
+        {
+            computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
+                jello->v[i][j][k], jello->v[ni][nj][nk],
+                bodyRestLength, jello->kElastic, jello->dElastic,
                 force);
         }
     }
@@ -233,71 +257,73 @@ void addCollisionForces(struct world* jello, int i, int j, int k, point* force)
     point p = jello->p[i][j][k];
     point v = jello->v[i][j][k];
 
-    // Bounding box: assume [-2, 2] range based on assignment
+    // Bounding box: [-2, 2] range
     double xMin = -2.0, xMax = 2.0;
     double yMin = -2.0, yMax = 2.0;
     double zMin = -2.0, zMax = 2.0;
 
-    // Check collision with each face of the bounding box
     double penetration;
 
-    // X faces
+    // X faces - wall at xMin (x = -2)
     if (p.x < xMin)
     {
-        penetration = xMin - p.x;
-        force->x += jello->kCollision * penetration;
-        if (v.x < 0)
+        penetration = xMin - p.x;  // Positive: how far past the wall
+        force->x += jello->kCollision * penetration;  // Push out (positive direction)
+        if (v.x < 0)  // Also moving into wall
         {
-            force->x -= jello->dCollision * v.x;
+            force->x += jello->dCollision * fabs(v.x);  // Add damping force (positive)
         }
     }
+    // X faces - wall at xMax (x = 2)
     if (p.x > xMax)
     {
-        penetration = p.x - xMax;
-        force->x -= jello->kCollision * penetration;
-        if (v.x > 0)
+        penetration = p.x - xMax;  // Positive: how far past the wall
+        force->x -= jello->kCollision * penetration;  // Push back (negative direction)
+        if (v.x > 0)  // Also moving into wall
         {
-            force->x -= jello->dCollision * v.x;
+            force->x -= jello->dCollision * fabs(v.x);  // Subtract damping force (negative)
         }
     }
 
-    // Y faces
+    // Y faces - wall at yMin (y = -2)
     if (p.y < yMin)
     {
         penetration = yMin - p.y;
         force->y += jello->kCollision * penetration;
         if (v.y < 0)
         {
-            force->y -= jello->dCollision * v.y;
+            force->y += jello->dCollision * fabs(v.y);
         }
     }
+    // Y faces - wall at yMax (y = 2)
     if (p.y > yMax)
     {
         penetration = p.y - yMax;
         force->y -= jello->kCollision * penetration;
         if (v.y > 0)
         {
-            force->y -= jello->dCollision * v.y;
+            force->y -= jello->dCollision * fabs(v.y);
         }
     }
 
-    // Z faces
+    // Z faces - wall at zMin (z = -2)
     if (p.z < zMin)
     {
         penetration = zMin - p.z;
         force->z += jello->kCollision * penetration;
         if (v.z < 0)
         {
-            force->z -= jello->dCollision * v.z;
+            force->z += jello->dCollision * fabs(v.z);
         }
     }
+    // Z faces - wall at zMax (z = 2)
     if (p.z > zMax)
     {
         penetration = p.z - zMax;
         force->z -= jello->kCollision * penetration;
         if (v.z > 0)
         {
-            force->z -= jello->dCollision * v.z;
+            force->z -= jello->dCollision * fabs(v.z);
         }
     }
 }

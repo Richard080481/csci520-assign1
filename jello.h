@@ -17,7 +17,7 @@
 #include <string.h>
 
 #define pi 3.141592653589793238462643383279
-#define JELLO_SUBPOINTS 3
+#define JELLO_SUBPOINTS 8
 #define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
 
 // camera angles

@@ -17,7 +17,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define JELLO_SUBPOINTS 3
+#define JELLO_SUBPOINTS 8
 #define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
 
 struct point
