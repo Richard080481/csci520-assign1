@@ -11,26 +11,27 @@
 int pointMap(int side, int i, int j)
 {
   int r;
-
+  constexpr int stride = JELLO_SUBPOINTS;
+  constexpr int slice_stride = stride * stride;
   switch (side)
   {
   case 1: //[i][j][0] bottom face
-    r = 64 * i + 8 * j;
+    r = slice_stride * i + stride * j;
     break;
-  case 6: //[i][j][7] top face
-    r = 64 * i + 8 * j + 7;
+  case 6: //[i][j][JELLO_SUBDIVISIONS] top face
+    r = slice_stride * i + stride * j + (stride-1);
     break;
   case 2: //[i][0][j] front face
-    r = 64 * i + j;
+    r = slice_stride * i + j;
     break;
-  case 5: //[i][7][j] back face
-    r = 64 * i + 56 + j;
+  case 5: //[i][JELLO_SUBDIVISIONS][j] back face
+    r = slice_stride * i + (stride - 1) * stride + j;
     break;
   case 3: //[0][i][j] left face
-    r = 8 * i + j;
+    r = stride * i + j;
     break;
-  case 4: //[7][i][j] right face
-    r = 448 + 8 * i + j;
+  case 4: //[JELLO_SUBDIVISIONS][i][j] right face
+    r = (stride - 1) * slice_stride + stride * i + j;
     break;
   }
 
@@ -43,8 +44,8 @@ void showCube(struct world * jello)
   point r1,r2,r3; // aux variables
 
   /* normals buffer and counter for Gourad shading*/
-  struct point normal[8][8];
-  int counter[8][8];
+  struct point normal[JELLO_SUBPOINTS][JELLO_SUBPOINTS];
+  int counter[JELLO_SUBPOINTS][JELLO_SUBPOINTS];
 
   int face;
   double faceFactor, length;
@@ -64,10 +65,10 @@ void showCube(struct world * jello)
     jp=j+(dj);\
     kp=k+(dk);\
     if\
-    (!( (ip>7) || (ip<0) ||\
-      (jp>7) || (jp<0) ||\
-    (kp>7) || (kp<0) ) && ((i==0) || (i==7) || (j==0) || (j==7) || (k==0) || (k==7))\
-       && ((ip==0) || (ip==7) || (jp==0) || (jp==7) || (kp==0) || (kp==7))) \
+    (!( (ip>JELLO_SUBDIVISIONS) || (ip<0) ||\
+      (jp>JELLO_SUBDIVISIONS) || (jp<0) ||\
+    (kp>JELLO_SUBDIVISIONS) || (kp<0) ) && ((i==0) || (i==JELLO_SUBDIVISIONS) || (j==0) || (j==JELLO_SUBDIVISIONS) || (k==0) || (k==JELLO_SUBDIVISIONS))\
+       && ((ip==0) || (ip==JELLO_SUBDIVISIONS) || (jp==0) || (jp==JELLO_SUBDIVISIONS) || (kp==0) || (kp==JELLO_SUBDIVISIONS))) \
     {\
       glVertex3f(jello->p[i][j][k].x,jello->p[i][j][k].y,jello->p[i][j][k].z);\
       glVertex3f(jello->p[ip][jp][kp].x,jello->p[ip][jp][kp].y,jello->p[ip][jp][kp].z);\
@@ -79,11 +80,11 @@ void showCube(struct world * jello)
     glLineWidth(1);
     glPointSize(5);
     glDisable(GL_LIGHTING);
-    for (i=0; i<=7; i++)
-      for (j=0; j<=7; j++)
-        for (k=0; k<=7; k++)
+    for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+      for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+        for (k=0; k<=JELLO_SUBDIVISIONS; k++)
         {
-          if (i*j*k*(7-i)*(7-j)*(7-k) != 0) // not surface point
+          if (i*j*k*(JELLO_SUBDIVISIONS-i)*(JELLO_SUBDIVISIONS-j)*(JELLO_SUBDIVISIONS-k) != 0) // not surface point
             continue;
 
           glBegin(GL_POINTS); // draw point
@@ -92,7 +93,7 @@ void showCube(struct world * jello)
           glEnd();
 
           //
-          //if ((i!=7) || (j!=7) || (k!=7))
+          //if ((i!=JELLO_SUBDIVISIONS) || (j!=JELLO_SUBDIVISIONS) || (k!=JELLO_SUBDIVISIONS))
           //  continue;
 
           glBegin(GL_LINES);
@@ -166,8 +167,8 @@ void showCube(struct world * jello)
         faceFactor=1;
 
 
-      for (i=0; i <= 7; i++) // reset buffers
-        for (j=0; j <= 7; j++)
+      for (i=0; i <= JELLO_SUBDIVISIONS; i++) // reset buffers
+        for (j=0; j <= JELLO_SUBDIVISIONS; j++)
         {
           normal[i][j].x=0;normal[i][j].y=0;normal[i][j].z=0;
           counter[i][j]=0;
@@ -175,8 +176,8 @@ void showCube(struct world * jello)
 
       /* process triangles, accumulate normals for Gourad shading */
 
-      for (i=0; i <= 6; i++)
-        for (j=0; j <= 6; j++) // process block (i,j)
+      for (i=0; i <= (JELLO_SUBPOINTS - 2); i++)
+        for (j=0; j <= (JELLO_SUBPOINTS - 2); j++) // process block (i,j)
         {
           pDIFFERENCE(NODE(face,i+1,j),NODE(face,i,j),r1); // first triangle
           pDIFFERENCE(NODE(face,i,j+1),NODE(face,i,j),r2);
@@ -203,7 +204,7 @@ void showCube(struct world * jello)
 
 
         /* the actual rendering */
-        for (j=1; j<=7; j++)
+        for (j=1; j<=JELLO_SUBDIVISIONS; j++)
         {
 
           if (faceFactor  > 0)
@@ -212,7 +213,7 @@ void showCube(struct world * jello)
             glFrontFace(GL_CW); // flip definition of orientation
 
           glBegin(GL_TRIANGLE_STRIP);
-          for (i=0; i<=7; i++)
+          for (i=0; i<=JELLO_SUBDIVISIONS; i++)
           {
             glNormal3f(normal[i][j].x / counter[i][j],normal[i][j].y / counter[i][j],
               normal[i][j].z / counter[i][j]);

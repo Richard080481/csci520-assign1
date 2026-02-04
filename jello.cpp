@@ -27,7 +27,7 @@ int g_iLeftMouseButton,g_iMiddleMouseButton,g_iRightMouseButton;
 int sprite=0;
 
 // these variables control what is displayed on screen
-int shear=1, bend=1, structural=1, pause=0, viewingMode=0, saveScreenToFile=0;
+int shear=1, bend=1, structural=1, pause=1, viewingMode=0, saveScreenToFile=0;
 
 struct world jello;
 

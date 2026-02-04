@@ -59,7 +59,7 @@ void addStructuralForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length is 1.0 (grid spacing between adjacent points)
-    double restLength = 1.0 / 7;
+    double restLength = 1.0 / JELLO_SUBDIVISIONS;
 
     for (int n = 0; n < 6; n++)
     {
@@ -68,7 +68,7 @@ void addStructuralForces(struct world* jello, int i, int j, int k, point* force)
         int nk = k + neighbors[n][2];
 
         // Check bounds
-        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        if (ni >= 0 && ni <= JELLO_SUBDIVISIONS && nj >= 0 && nj <= JELLO_SUBDIVISIONS && nk >= 0 && nk <= JELLO_SUBDIVISIONS)
         {
             computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
                 jello->v[i][j][k], jello->v[ni][nj][nk],
@@ -92,7 +92,7 @@ void addShearForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length for face diagonals: sqrt(2)
-    double restLength = sqrt(2.0) / 7;
+    double restLength = sqrt(2.0) / JELLO_SUBDIVISIONS;
 
     for (int n = 0; n < 12; n++)
     {
@@ -100,7 +100,7 @@ void addShearForces(struct world* jello, int i, int j, int k, point* force)
         int nj = j + shearNeighbors[n][1];
         int nk = k + shearNeighbors[n][2];
 
-        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        if (ni >= 0 && ni <= JELLO_SUBDIVISIONS && nj >= 0 && nj <= JELLO_SUBDIVISIONS && nk >= 0 && nk <= JELLO_SUBDIVISIONS)
         {
             computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
                 jello->v[i][j][k], jello->v[ni][nj][nk],
@@ -121,7 +121,7 @@ void addBendForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length for bend springs: 2.0
-    double restLength = 2.0 / 7;
+    double restLength = 2.0 / JELLO_SUBDIVISIONS;
 
     for (int n = 0; n < 6; n++)
     {
@@ -129,7 +129,7 @@ void addBendForces(struct world* jello, int i, int j, int k, point* force)
         int nj = j + bendNeighbors[n][1];
         int nk = k + bendNeighbors[n][2];
 
-        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        if (ni >= 0 && ni <= JELLO_SUBDIVISIONS && nj >= 0 && nj <= JELLO_SUBDIVISIONS && nk >= 0 && nk <= JELLO_SUBDIVISIONS)
         {
             computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
                 jello->v[i][j][k], jello->v[ni][nj][nk],
@@ -148,7 +148,7 @@ void addForceFieldForce(struct world* jello, int i, int j, int k, point* force)
     point p = jello->p[i][j][k];
 
     // Map position to grid coordinates [0, resolution-1]
-    // Assuming the jello cube is positioned in [0, 7] range (natural grid coordinates)
+    // Assuming the jello cube is positioned in [0, JELLO_SUBDIVISIONS] range (natural grid coordinates)
     double x_grid = p.x;
     double y_grid = p.y;
     double z_grid = p.z;
@@ -302,23 +302,23 @@ void addCollisionForces(struct world* jello, int i, int j, int k, point* force)
     }
 }
 
-void computeAcceleration(struct world* jello, point a[8][8][8])
+void computeAcceleration(struct world* jello, point a[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS])
 {
     int i, j, k;
     point force;
 
     // Initialize all accelerations
-    for (i = 0; i <= 7; i++)
-        for (j = 0; j <= 7; j++)
-            for (k = 0; k <= 7; k++)
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+            for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
                 pMAKE(0.0, 0.0, 0.0, a[i][j][k]);
 
     // Compute forces for each mass point
-    for (i = 0; i <= 7; i++)
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
     {
-        for (j = 0; j <= 7; j++)
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
         {
-            for (k = 0; k <= 7; k++)
+            for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
             {
                 // Reset force accumulator
                 pMAKE(0.0, 0.0, 0.0, force);
@@ -356,13 +356,13 @@ void computeAcceleration(struct world* jello, point a[8][8][8])
 void Euler(struct world * jello)
 {
   int i,j,k;
-  point a[8][8][8];
+  point a[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS];
 
   computeAcceleration(jello, a);
 
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
+      for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+          for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
       {
         jello->p[i][j][k].x += jello->dt * jello->v[i][j][k].x;
         jello->p[i][j][k].y += jello->dt * jello->v[i][j][k].y;
@@ -378,12 +378,12 @@ void Euler(struct world * jello)
 /* as a result, updates the jello structure */
 void RK4(struct world * jello)
 {
-  point F1p[8][8][8], F1v[8][8][8],
-        F2p[8][8][8], F2v[8][8][8],
-        F3p[8][8][8], F3v[8][8][8],
-        F4p[8][8][8], F4v[8][8][8];
+  point F1p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS], F1v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS],
+        F2p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS], F2v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS],
+        F3p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS], F3v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS],
+        F4p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS], F4v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS];
 
-  point a[8][8][8];
+  point a[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS];
 
 
   struct world buffer;
@@ -394,9 +394,9 @@ void RK4(struct world * jello)
 
   computeAcceleration(jello, a);
 
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
          pMULTIPLY(jello->v[i][j][k],jello->dt,F1p[i][j][k]);
          pMULTIPLY(a[i][j][k],jello->dt,F1v[i][j][k]);
@@ -408,9 +408,9 @@ void RK4(struct world * jello)
 
   computeAcceleration(&buffer, a);
 
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
          // F2p = dt * buffer.v;
          pMULTIPLY(buffer.v[i][j][k],jello->dt,F2p[i][j][k]);
@@ -424,9 +424,9 @@ void RK4(struct world * jello)
 
   computeAcceleration(&buffer, a);
 
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
          // F3p = dt * buffer.v;
          pMULTIPLY(buffer.v[i][j][k],jello->dt,F3p[i][j][k]);
@@ -441,9 +441,9 @@ void RK4(struct world * jello)
   computeAcceleration(&buffer, a);
 
 
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
          // F3p = dt * buffer.v;
          pMULTIPLY(buffer.v[i][j][k],jello->dt,F4p[i][j][k]);

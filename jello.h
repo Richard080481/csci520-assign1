@@ -17,6 +17,8 @@
 #include <string.h>
 
 #define pi 3.141592653589793238462643383279
+#define JELLO_SUBPOINTS 3
+#define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
 
 // camera angles
 extern double Theta;
@@ -49,13 +51,13 @@ struct world
   double dElastic; // Damping coefficient for all springs except collision springs
   double kCollision; // Hook's elasticity coefficient for collision springs
   double dCollision; // Damping coefficient collision springs
-  double mass; // mass of each of the 512 control points, mass assumed to be equal for every control point
+  double mass; // mass of each of the (JELLO_SUBPOINTS^3) control points, mass assumed to be equal for every control point
   int incPlanePresent; // Is the inclined plane present? 1 = YES, 0 = NO (always NO in this assignment)
   double a,b,c,d; // inclined plane has equation a * x + b * y + c * z + d = 0; if no inclined plane, these four fields are not used
   int resolution; // resolution for the 3d grid specifying the external force field; value of 0 means that there is no force field
   struct point * forceField; // pointer to the array of values of the force field
-  struct point p[8][8][8]; // position of the 512 control points
-  struct point v[8][8][8]; // velocities of the 512 control points
+  struct point p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // position of the JELLO_SUBPOINTS^3 control points
+  struct point v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // velocities of the JELLO_SUBPOINTS^3 control points
 };
 
 extern struct world jello;

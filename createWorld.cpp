@@ -17,6 +17,9 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define JELLO_SUBPOINTS 3
+#define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
+
 struct point
 {
    double x;
@@ -33,13 +36,13 @@ struct world
   double dElastic; // Damping coefficient for all springs except collision springs
   double kCollision; // Hook's elasticity coefficient for collision springs
   double dCollision; // Damping coefficient collision springs
-  double mass; // mass of each of the 512 control points, mass assumed to be equal for every control point
+  double mass; // mass of each of the JELLO_SUBPOINTS^3 control points, mass assumed to be equal for every control point
   int incPlanePresent; // Is the inclined plane present? 1 = YES, 0 = NO
   double a,b,c,d; // inclined plane has equation a * x + b * y + c * z + d = 0; if no inclined plane, these four fields are not used
   int resolution; // resolution for the 3d grid specifying the external force field; value of 0 means that there is no force field
   struct point * forceField; // pointer to the array of values of the force field
-  struct point p[8][8][8]; // position of the 512 control points
-  struct point v[8][8][8]; // velocities of the 512 control points
+  struct point p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // position of the JELLO_SUBPOINTS^3 control points
+  struct point v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // velocities of the JELLO_SUBPOINTS^3 control points
 };
 
 
@@ -96,22 +99,22 @@ void writeWorld(const char * fileName, struct world * jello)
 
 
   /* write initial point positions */
-  for (i = 0; i <= 7 ; i++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fprintf(file, "%lf %lf %lf\n",
           jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
     }
   }
 
   /* write initial point velocities */
-  for (i = 0; i <= 7 ; i++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fprintf(file, "%lf %lf %lf\n",
           jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
     }
@@ -170,27 +173,25 @@ int main()
       }
 
   // set the positions of control points
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
-        jello.p[i][j][k].x=1.0 * i / 7;
-        jello.p[i][j][k].y=1.0 * j / 7;
-        jello.p[i][j][k].z=1.0 * k / 7;
-        if ((i==7) && (j==7) && (k==7))
+        jello.p[i][j][k].x=1.0 * i / JELLO_SUBDIVISIONS;
+        jello.p[i][j][k].y=1.0 * j / JELLO_SUBDIVISIONS;
+        jello.p[i][j][k].z=1.0 * k / JELLO_SUBDIVISIONS;
+        if ((i==JELLO_SUBDIVISIONS) && (j==JELLO_SUBDIVISIONS) && (k==JELLO_SUBDIVISIONS))
         {
-          jello.p[i][j][k].x=1.0 + 1.0 / 7;
-          jello.p[i][j][k].y=1.0 + 1.0 / 7;
-          jello.p[i][j][k].z=1.0 + 1.0 / 7;
+          jello.p[i][j][k].x=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+          jello.p[i][j][k].y=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+          jello.p[i][j][k].z=1.0 + 1.0 / JELLO_SUBDIVISIONS;
         }
-
-
       }
 
   // set the velocities of control points
-  for (i=0; i<=7; i++)
-    for (j=0; j<=7; j++)
-      for (k=0; k<=7; k++)
+  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
+    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
+      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
       {
         jello.v[i][j][k].x=10.0;
         jello.v[i][j][k].y=-10.0;

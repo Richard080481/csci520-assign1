@@ -179,8 +179,8 @@ void readWorld (char * fileName, struct world * jello)
     dElastic = damping coefficient of the spring (same for all springs except collision springs)
     kCollision = elastic coefficient of collision springs (same for all collision springs)
     dCollision = damping coefficient of collision springs (same for all collision springs)
-    mass = mass in kilograms for each of the 512 mass points
-    (mass assumed to be the same for all the points; total mass of the jello cube = 512 * mass)
+    mass = mass in kilograms for each of the (JELLO_SUBPOINTS^3) mass points
+    (mass assumed to be the same for all the points; total mass of the jello cube = (JELLO_SUBPOINTS^3) * mass)
 
   Example:
     10000 25 10000 15
@@ -201,8 +201,8 @@ void readWorld (char * fileName, struct world * jello)
     <here 30 * 30 * 30 = 27 000 lines follow, each containing 3 real numbers>
 
   After this, there should be 1024 lines, each containing three floating-point numbers.
-  The first 512 lines correspond to initial point locations.
-  The last 512 lines correspond to initial point velocities.
+  The first (JELLO_SUBPOINTS^3) lines correspond to initial point locations.
+  The last (JELLO_SUBPOINTS^3) lines correspond to initial point velocities.
 
   There should no blank lines anywhere in the file.
 
@@ -218,7 +218,7 @@ void readWorld (char * fileName, struct world * jello)
   fscanf(file, "%lf %lf %lf %lf\n",
     &jello->kElastic, &jello->dElastic, &jello->kCollision, &jello->dCollision);
 
-  /* read mass of each of the 512 points */
+  /* read mass of each of the (JELLO_SUBPOINTS^3) points */
   fscanf(file, "%lf\n", &jello->mass);
 
   /* read info about the plane */
@@ -241,22 +241,22 @@ void readWorld (char * fileName, struct world * jello)
 
 
   /* read initial point positions */
-  for (i= 0; i <= 7 ; i++)
+  for (i= 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fscanf(file, "%lf %lf %lf\n",
           &jello->p[i][j][k].x, &jello->p[i][j][k].y, &jello->p[i][j][k].z);
     }
   }
 
   /* read initial point velocities */
-  for (i = 0; i <= 7 ; i++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fscanf(file, "%lf %lf %lf\n",
           &jello->v[i][j][k].x, &jello->v[i][j][k].y, &jello->v[i][j][k].z);
     }
@@ -316,22 +316,22 @@ void writeWorld (char * fileName, struct world * jello)
 
 
   /* write initial point positions */
-  for (i = 0; i <= 7 ; i++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fprintf(file, "%lf %lf %lf\n",
           jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
     }
   }
 
   /* write initial point velocities */
-  for (i = 0; i <= 7 ; i++)
+  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
   {
-    for (j = 0; j <= 7; j++)
+    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
     {
-      for (k = 0; k <= 7; k++)
+      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
         fprintf(file, "%lf %lf %lf\n",
           jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
     }
