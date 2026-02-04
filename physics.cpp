@@ -11,17 +11,352 @@
 /* Computes acceleration to every control point of the jello cube,
    which is in state given by 'jello'.
    Returns result in array 'a'. */
-void computeAcceleration(struct world * jello, struct point a[8][8][8])
+
+// Helper function to compute spring force between two points
+void computeSpringForce(point p1, point p2, point v1, point v2,
+    double restLength, double kHook, double kDamp,
+    point* force)
 {
-  /* for you to implement ... */
-    for(int i = 0; i < 8; i++) {
-        for(int j = 0; j < 8; j++) {
-            for(int k = 0; k < 8; k++) {
-                // For now, just set acceleration to zero
-                pCPY(jello->p[i][j][k], a[i][j][k]);
+    // Vector from p1 to p2
+    point L;
+    pDIFFERENCE(p1, p2, L);
+
+    // Current length
+    double length = sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
+
+    if (length < 1e-8) return; // Avoid division by zero
+
+    // Unit vector
+    point unitL;
+    pMULTIPLY(L, 1.0 / length, unitL);
+
+    // Spring force magnitude: F = -k * (length - restLength)
+    point springForceVec;
+    double springMagnitude = -kHook * (length - restLength);
+    pMULTIPLY(unitL, springMagnitude, springForceVec);
+
+    // Damping force: F = -kd * ((v1-v2) dot unitL)
+    point vDiff;
+    pDIFFERENCE(v1, v2, vDiff);
+    double dotProduct = vDiff.x * unitL.x + vDiff.y * unitL.y + vDiff.z * unitL.z;
+    double dampingMagnitude = -kDamp * dotProduct;
+
+    point dampingForceVec;
+    pMULTIPLY(unitL, dampingMagnitude, dampingForceVec);
+
+    // Add both forces
+    pSUM(*force, springForceVec, *force);
+    pSUM(*force, dampingForceVec, *force);
+}
+
+void addStructuralForces(struct world* jello, int i, int j, int k, point* force)
+{
+    // Connect to 6 immediate neighbors (±x, ±y, ±z directions)
+    int neighbors[6][3] = {
+        {1,0,0}, {-1,0,0},  // x direction
+        {0,1,0}, {0,-1,0},  // y direction
+        {0,0,1}, {0,0,-1}   // z direction
+    };
+
+    // Rest length is 1.0 (grid spacing between adjacent points)
+    double restLength = 1.0 / 7;
+
+    for (int n = 0; n < 6; n++)
+    {
+        int ni = i + neighbors[n][0];
+        int nj = j + neighbors[n][1];
+        int nk = k + neighbors[n][2];
+
+        // Check bounds
+        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        {
+            computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
+                jello->v[i][j][k], jello->v[ni][nj][nk],
+                restLength,
+                jello->kElastic, jello->dElastic,
+                force);
+        }
+    }
+}
+
+void addShearForces(struct world* jello, int i, int j, int k, point* force)
+{
+    // Face diagonals (12 springs per point)
+    int shearNeighbors[12][3] = {
+        // xy plane diagonals
+        {1,1,0}, {1,-1,0}, {-1,1,0}, {-1,-1,0},
+        // xz plane diagonals
+        {1,0,1}, {1,0,-1}, {-1,0,1}, {-1,0,-1},
+        // yz plane diagonals
+        {0,1,1}, {0,1,-1}, {0,-1,1}, {0,-1,-1}
+    };
+
+    // Rest length for face diagonals: sqrt(2)
+    double restLength = sqrt(2.0);
+
+    for (int n = 0; n < 12; n++)
+    {
+        int ni = i + shearNeighbors[n][0];
+        int nj = j + shearNeighbors[n][1];
+        int nk = k + shearNeighbors[n][2];
+
+        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        {
+            computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
+                jello->v[i][j][k], jello->v[ni][nj][nk],
+                restLength,
+                jello->kElastic, jello->dElastic,
+                force);
+        }
+    }
+}
+
+void addBendForces(struct world* jello, int i, int j, int k, point* force)
+{
+    // Connect to points 2 units away in each axis direction
+    int bendNeighbors[6][3] = {
+        {2,0,0}, {-2,0,0},
+        {0,2,0}, {0,-2,0},
+        {0,0,2}, {0,0,-2}
+    };
+
+    // Rest length for bend springs: 2.0
+    double restLength = 2.0;
+
+    for (int n = 0; n < 6; n++)
+    {
+        int ni = i + bendNeighbors[n][0];
+        int nj = j + bendNeighbors[n][1];
+        int nk = k + bendNeighbors[n][2];
+
+        if (ni >= 0 && ni <= 7 && nj >= 0 && nj <= 7 && nk >= 0 && nk <= 7)
+        {
+            computeSpringForce(jello->p[i][j][k], jello->p[ni][nj][nk],
+                jello->v[i][j][k], jello->v[ni][nj][nk],
+                restLength,
+                jello->kElastic, jello->dElastic,
+                force);
+        }
+    }
+}
+
+void addForceFieldForce(struct world* jello, int i, int j, int k, point* force)
+{
+    if (jello->resolution <= 0 || jello->forceField == NULL)
+        return;
+
+    point p = jello->p[i][j][k];
+
+    // Map position to grid coordinates [0, resolution-1]
+    // Assuming the jello cube is positioned in [0, 7] range (natural grid coordinates)
+    double x_grid = p.x;
+    double y_grid = p.y;
+    double z_grid = p.z;
+
+    // Clamp to valid range
+    if (x_grid < 0) x_grid = 0;
+    if (x_grid > jello->resolution - 1) x_grid = jello->resolution - 1;
+    if (y_grid < 0) y_grid = 0;
+    if (y_grid > jello->resolution - 1) y_grid = jello->resolution - 1;
+    if (z_grid < 0) z_grid = 0;
+    if (z_grid > jello->resolution - 1) z_grid = jello->resolution - 1;
+
+    // Trilinear interpolation
+    int x0 = (int)floor(x_grid);
+    int y0 = (int)floor(y_grid);
+    int z0 = (int)floor(z_grid);
+    int x1 = (x0 < jello->resolution - 1) ? x0 + 1 : x0;
+    int y1 = (y0 < jello->resolution - 1) ? y0 + 1 : y0;
+    int z1 = (z0 < jello->resolution - 1) ? z0 + 1 : z0;
+
+    double xd = x_grid - x0;
+    double yd = y_grid - y0;
+    double zd = z_grid - z0;
+
+    // Bounds checking for array access
+    if (x0 < 0 || x1 >= jello->resolution ||
+        y0 < 0 || y1 >= jello->resolution ||
+        z0 < 0 || z1 >= jello->resolution)
+        return;
+
+    // Get force field values at 8 corners
+    int stride = jello->resolution * jello->resolution;
+    point f000 = jello->forceField[x0 + y0 * jello->resolution + z0 * stride];
+    point f100 = jello->forceField[x1 + y0 * jello->resolution + z0 * stride];
+    point f010 = jello->forceField[x0 + y1 * jello->resolution + z0 * stride];
+    point f110 = jello->forceField[x1 + y1 * jello->resolution + z0 * stride];
+    point f001 = jello->forceField[x0 + y0 * jello->resolution + z1 * stride];
+    point f101 = jello->forceField[x1 + y0 * jello->resolution + z1 * stride];
+    point f011 = jello->forceField[x0 + y1 * jello->resolution + z1 * stride];
+    point f111 = jello->forceField[x1 + y1 * jello->resolution + z1 * stride];
+
+    // Trilinear interpolation using macros
+    point f00, f01, f10, f11, f0, f1, f;
+
+    // Interpolate in x direction
+    f00.x = f000.x * (1 - xd) + f100.x * xd;
+    f00.y = f000.y * (1 - xd) + f100.y * xd;
+    f00.z = f000.z * (1 - xd) + f100.z * xd;
+
+    f01.x = f001.x * (1 - xd) + f101.x * xd;
+    f01.y = f001.y * (1 - xd) + f101.y * xd;
+    f01.z = f001.z * (1 - xd) + f101.z * xd;
+
+    f10.x = f010.x * (1 - xd) + f110.x * xd;
+    f10.y = f010.y * (1 - xd) + f110.y * xd;
+    f10.z = f010.z * (1 - xd) + f110.z * xd;
+
+    f11.x = f011.x * (1 - xd) + f111.x * xd;
+    f11.y = f011.y * (1 - xd) + f111.y * xd;
+    f11.z = f011.z * (1 - xd) + f111.z * xd;
+
+    // Interpolate in y direction
+    f0.x = f00.x * (1 - yd) + f10.x * yd;
+    f0.y = f00.y * (1 - yd) + f10.y * yd;
+    f0.z = f00.z * (1 - yd) + f10.z * yd;
+
+    f1.x = f01.x * (1 - yd) + f11.x * yd;
+    f1.y = f01.y * (1 - yd) + f11.y * yd;
+    f1.z = f01.z * (1 - yd) + f11.z * yd;
+
+    // Interpolate in z direction
+    f.x = f0.x * (1 - zd) + f1.x * zd;
+    f.y = f0.y * (1 - zd) + f1.y * zd;
+    f.z = f0.z * (1 - zd) + f1.z * zd;
+
+    // Add interpolated force
+    pSUM(*force, f, *force);
+}
+
+void addCollisionForces(struct world* jello, int i, int j, int k, point* force)
+{
+    point p = jello->p[i][j][k];
+    point v = jello->v[i][j][k];
+
+    // Bounding box: assume [-2, 2] range based on assignment
+    double xMin = -2.0, xMax = 2.0;
+    double yMin = -2.0, yMax = 2.0;
+    double zMin = -2.0, zMax = 2.0;
+
+    // Check collision with each face of the bounding box
+    double penetration;
+
+    // X faces
+    if (p.x < xMin)
+    {
+        penetration = xMin - p.x;
+        force->x += jello->kCollision * penetration;
+        if (v.x < 0)
+        {
+            force->x -= jello->dCollision * v.x;
+        }
+    }
+    if (p.x > xMax)
+    {
+        penetration = p.x - xMax;
+        force->x -= jello->kCollision * penetration;
+        if (v.x > 0)
+        {
+            force->x -= jello->dCollision * v.x;
+        }
+    }
+
+    // Y faces
+    if (p.y < yMin)
+    {
+        penetration = yMin - p.y;
+        force->y += jello->kCollision * penetration;
+        if (v.y < 0)
+        {
+            force->y -= jello->dCollision * v.y;
+        }
+    }
+    if (p.y > yMax)
+    {
+        penetration = p.y - yMax;
+        force->y -= jello->kCollision * penetration;
+        if (v.y > 0)
+        {
+            force->y -= jello->dCollision * v.y;
+        }
+    }
+
+    // Z faces
+    if (p.z < zMin)
+    {
+        penetration = zMin - p.z;
+        force->z += jello->kCollision * penetration;
+        if (v.z < 0)
+        {
+            force->z -= jello->dCollision * v.z;
+        }
+    }
+    if (p.z > zMax)
+    {
+        penetration = p.z - zMax;
+        force->z -= jello->kCollision * penetration;
+        if (v.z > 0)
+        {
+            force->z -= jello->dCollision * v.z;
+        }
+    }
+}
+
+void computeAcceleration(struct world* jello, point a[8][8][8])
+{
+    int i, j, k;
+    point force;
+
+    // Initialize all accelerations
+    for (i = 0; i <= 7; i++)
+        for (j = 0; j <= 7; j++)
+            for (k = 0; k <= 7; k++)
+                pMAKE(0.0, 0.0, 0.0, a[i][j][k]);
+
+    // Compute forces for each mass point
+    for (i = 0; i <= 7; i++)
+    {
+        for (j = 0; j <= 7; j++)
+        {
+            for (k = 0; k <= 7; k++)
+            {
+                // Reset force accumulator
+                pMAKE(0.0, 0.0, 0.0, force);
+
+                // 1. Add gravity (always present)
+                force.z -= 9.8;
+
+                // 2. Add structural spring forces (immediate neighbors)
+                if (structural)  // Check if enabled
+                {
+                    addStructuralForces(jello, i, j, k, &force);
+                }
+
+                //// 3. Add shear spring forces (face diagonals)
+                //if (shear)  // Check if enabled
+                //{
+                //    addShearForces(jello, i, j, k, &force);
+                //}
+
+                //// 4. Add bend spring forces (skip-one neighbors)
+                //if (bend) // Check if enabled
+                //{
+                //    addBendForces(jello, i, j, k, &force);
+                //}
+                //// 5. Add external force field (if present)
+                //if (jello->resolution > 0 && jello->forceField != NULL)
+                //{
+                //    addForceFieldForce(jello, i, j, k, &force);
+                //}
+
+                // 6. Handle collision forces with bounding box
+                addCollisionForces(jello, i, j, k, &force);
+
+                // Compute acceleration: F = ma, so a = F/m
+                pMULTIPLY(force, 1.0 / jello->mass, a[i][j][k]);
             }
         }
-	}
+    }
 }
 
 /* performs one step of Euler Integration */
