@@ -92,7 +92,7 @@ void addShearForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length for face diagonals: sqrt(2)
-    double restLength = sqrt(2.0);
+    double restLength = sqrt(2.0) / 7;
 
     for (int n = 0; n < 12; n++)
     {
@@ -121,7 +121,7 @@ void addBendForces(struct world* jello, int i, int j, int k, point* force)
     };
 
     // Rest length for bend springs: 2.0
-    double restLength = 2.0;
+    double restLength = 2.0 / 7;
 
     for (int n = 0; n < 6; n++)
     {
@@ -327,22 +327,14 @@ void computeAcceleration(struct world* jello, point a[8][8][8])
                 force.z -= 9.8;
 
                 // 2. Add structural spring forces (immediate neighbors)
-                if (structural)  // Check if enabled
-                {
-                    addStructuralForces(jello, i, j, k, &force);
-                }
+                addStructuralForces(jello, i, j, k, &force);
 
-                //// 3. Add shear spring forces (face diagonals)
-                //if (shear)  // Check if enabled
-                //{
-                //    addShearForces(jello, i, j, k, &force);
-                //}
+                // 3. Add shear spring forces (face diagonals)
+                addShearForces(jello, i, j, k, &force);
 
-                //// 4. Add bend spring forces (skip-one neighbors)
-                //if (bend) // Check if enabled
-                //{
-                //    addBendForces(jello, i, j, k, &force);
-                //}
+                // 4. Add bend spring forces (skip-one neighbors)
+                addBendForces(jello, i, j, k, &force);
+
                 //// 5. Add external force field (if present)
                 //if (jello->resolution > 0 && jello->forceField != NULL)
                 //{
