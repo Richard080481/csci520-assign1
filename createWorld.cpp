@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h> // Include time.h for seeding the random number generator
 
 #define JELLO_SUBPOINTS 8
 #define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
@@ -154,6 +155,10 @@ int main()
   jello.resolution=30;
   jello.forceField =
     (struct point *)malloc(jello.resolution*jello.resolution*jello.resolution*sizeof(struct point));
+  
+  // Seed random number generator
+  srand(time(NULL));
+  
   for (i=0; i<= jello.resolution-1; i++)
     for (j=0; j<= jello.resolution-1; j++)
       for (k=0; k<= jello.resolution-1; k++)
@@ -164,12 +169,24 @@ int main()
         y = -2 + 4*(1.0 * j / (jello.resolution-1));
         z = -2 + 4*(1.0 * k / (jello.resolution-1));
 
+        // Random force field
+        double strength = 20.0;  // Adjust this to control force magnitude
+        
+        // Generate random numbers in range [-1, 1]
+        double randomX = (2.0 * rand() / RAND_MAX) - 1.0;
+        double randomY = (2.0 * rand() / RAND_MAX) - 1.0;
+        double randomZ = (2.0 * rand() / RAND_MAX) - 1.0;
+        
+        double forceX = randomX * strength;
+        double forceY = randomY * strength;
+        double forceZ = randomZ * strength;
+
         jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].x = 0;
+          + j * jello.resolution + k].x = forceX;
         jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].y = 0;
+          + j * jello.resolution + k].y = forceY;
         jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].z = 0;
+          + j * jello.resolution + k].z = forceZ;
       }
 
   // set the positions of control points

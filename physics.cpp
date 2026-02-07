@@ -166,7 +166,7 @@ void addBendForces(struct world* jello, int i, int j, int k, point* force)
 
 void addForceFieldForce(struct world* jello, int i, int j, int k, point* force)
 {
-    if (jello->resolution <= 0 || jello->forceField == NULL)
+    if (jello->forceField == NULL)
         return;
 
     point p = jello->p[i][j][k];
@@ -350,7 +350,7 @@ void computeAcceleration(struct world* jello, point a[JELLO_SUBPOINTS][JELLO_SUB
                 pMAKE(0.0, 0.0, 0.0, force);
 
                 // 1. Add gravity (always present)
-                force.z -= 9.8;
+                //force.z -= 9.8;
 
                 // 2. Add structural spring forces (immediate neighbors)
                 addStructuralForces(jello, i, j, k, &force);
@@ -361,11 +361,11 @@ void computeAcceleration(struct world* jello, point a[JELLO_SUBPOINTS][JELLO_SUB
                 // 4. Add bend spring forces (skip-one neighbors)
                 addBendForces(jello, i, j, k, &force);
 
-                //// 5. Add external force field (if present)
-                //if (jello->resolution > 0 && jello->forceField != NULL)
-                //{
-                //    addForceFieldForce(jello, i, j, k, &force);
-                //}
+                // 5. Add external force field (if present)
+                if (jello->resolution != 0)
+                {
+                    addForceFieldForce(jello, i, j, k, &force);
+                }
 
                 // 6. Handle collision forces with bounding box
                 addCollisionForces(jello, i, j, k, &force);

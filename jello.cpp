@@ -25,9 +25,10 @@ int g_iLeftMouseButton,g_iMiddleMouseButton,g_iRightMouseButton;
 
 // number of images saved to disk so far
 int sprite=0;
+double timeCounter = 0.0;
 
 // these variables control what is displayed on screen
-int shear=1, bend=1, structural=1, pause=1, viewingMode=0, saveScreenToFile=0;
+int shear=0, bend=0, structural=1, pause=0, viewingMode=0, saveScreenToFile=1;
 
 struct world jello;
 
@@ -203,11 +204,16 @@ void doIdle()
   s[5] = 48 + (sprite % 100 ) / 10;
   s[6] = 48 + sprite % 10;
 
-  if (saveScreenToFile==1)
+  if (saveScreenToFile == 1)
   {
-    saveScreenshot(windowWidth, windowHeight, s);
-    saveScreenToFile=0; // save only once, change this if you want continuos image generation (i.e. animation)
-    sprite++;
+    if (timeCounter >= (1.0 / 15))
+    {
+      saveScreenshot(windowWidth, windowHeight, s);
+      timeCounter -= (1.0 / 15);
+      sprite++;
+    }
+    //saveScreenToFile=0; // save only once, change this if you want continuos image generation (i.e. animation)
+    timeCounter += 0.0005;
   }
 
   if (sprite >= 300) // allow only 300 snapshots
