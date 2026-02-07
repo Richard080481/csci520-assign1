@@ -19,6 +19,7 @@ obj/
 *.exp
 *.pdb
 *.w
+*.jpg
 
 # Third-party / generated libs
 freeglut-3.0.0-win32/bin/
