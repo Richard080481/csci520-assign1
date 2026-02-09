@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 #elif defined(linux) || defined(__linux__)
 #include <GL/gl.h>
 #include <GL/glu.h>

@@ -8,6 +8,12 @@
 #ifndef _JELLO_H_
 #define _JELLO_H_
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#include <stdexcept>
+#include <vulkan/vulkan.h>
+
 #include "openGL-headers.h"
 #include "pic.h"
 

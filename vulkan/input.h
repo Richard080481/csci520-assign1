@@ -16,7 +16,7 @@ void saveScreenshot (int windowWidth, int windowHeight, char *filename);
 void mouseMotionDrag(int x, int y);
 void mouseMotion (int x, int y);
 void mouseButton(int button, int state, int x, int y);
-void keyboardFunc (unsigned char key, int x, int y);
+void keyboardFunc(GLFWwindow* window, unsigned char key, int x, int y);
 
 // read/write world files
 void readWorld (char * fileName, struct world * jello);
