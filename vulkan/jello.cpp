@@ -85,7 +85,7 @@ void display()
 
     // camera parameters are Phi, Theta, R
     gluLookAt(R * cos(Phi) * cos (Theta), R * sin(Phi) * cos (Theta), R * sin (Theta),
-	        0.0,0.0,0.0, 0.0,0.0,1.0);
+            0.0,0.0,0.0, 0.0,0.0,1.0);
 
 
     /* Lighting */
@@ -202,32 +202,33 @@ void doIdle()
 
     if (saveScreenToFile == 1)
     {
-    if (timeCounter >= (1.0 / 15))
-    {
-        saveScreenshot(windowWidth, windowHeight, s);
-        timeCounter -= (1.0 / 15);
-        sprite++;
-    }
-    //saveScreenToFile=0; // save only once, change this if you want continuos image generation (i.e. animation)
-    timeCounter += 0.0005;
+        if (timeCounter >= (1.0 / 15))
+        {
+            saveScreenshot(windowWidth, windowHeight, s);
+            timeCounter -= (1.0 / 15);
+            sprite++;
+        }
+        //saveScreenToFile=0; // save only once, change this if you want continuos image generation (i.e. animation)
+        timeCounter += 0.0005;
     }
 
     if (sprite >= 300) // allow only 300 snapshots
     {
-    exit(0);
+        exit(0);
     }
 
     if (pause == 0)
     {
-    // perform one time step of the simulation
-        if (strcmp(jello.integrator, "Euler") == 0)
-        {
-            Euler(&jello);
-        }
-        else
-        {
-            RK4(&jello);
-        }
+        RK4(&jello);
+        // perform one time step of the simulation
+        //if (strcmp(jello.integrator, "Euler") == 0)
+        //{
+        //    Euler(&jello);
+        //}
+        //else
+        //{
+        //    RK4(&jello);
+        //}
     }
 }
 

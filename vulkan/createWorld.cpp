@@ -26,27 +26,27 @@
 
 struct point
 {
-   double x;
-   double y;
-   double z;
+    double x;
+    double y;
+    double z;
 };
 
 struct world
 {
-  char integrator[10]; // "RK4" or "Euler"
-  double dt; // timestep, e.g.. 0.001
-  int n; // display only every nth timestep
-  double kElastic; // Hook's elasticity coefficient for all springs except collision springs
-  double dElastic; // Damping coefficient for all springs except collision springs
-  double kCollision; // Hook's elasticity coefficient for collision springs
-  double dCollision; // Damping coefficient collision springs
-  double mass; // mass of each of the JELLO_SUBPOINTS^3 control points, mass assumed to be equal for every control point
-  int incPlanePresent; // Is the inclined plane present? 1 = YES, 0 = NO
-  double a,b,c,d; // inclined plane has equation a * x + b * y + c * z + d = 0; if no inclined plane, these four fields are not used
-  int resolution; // resolution for the 3d grid specifying the external force field; value of 0 means that there is no force field
-  struct point * forceField; // pointer to the array of values of the force field
-  struct point p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // position of the JELLO_SUBPOINTS^3 control points
-  struct point v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // velocities of the JELLO_SUBPOINTS^3 control points
+    char integrator[10]; // "RK4" or "Euler"
+    double dt; // timestep, e.g.. 0.001
+    int n; // display only every nth timestep
+    double kElastic; // Hook's elasticity coefficient for all springs except collision springs
+    double dElastic; // Damping coefficient for all springs except collision springs
+    double kCollision; // Hook's elasticity coefficient for collision springs
+    double dCollision; // Damping coefficient collision springs
+    double mass; // mass of each of the JELLO_SUBPOINTS^3 control points, mass assumed to be equal for every control point
+    int incPlanePresent; // Is the inclined plane present? 1 = YES, 0 = NO
+    double a,b,c,d; // inclined plane has equation a * x + b * y + c * z + d = 0; if no inclined plane, these four fields are not used
+    int resolution; // resolution for the 3d grid specifying the external force field; value of 0 means that there is no force field
+    struct point * forceField; // pointer to the array of values of the force field
+    struct point p[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // position of the JELLO_SUBPOINTS^3 control points
+    struct point v[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]; // velocities of the JELLO_SUBPOINTS^3 control points
 };
 
 
@@ -63,165 +63,184 @@ struct world
 /* function aborts the program if can't access the file */
 void writeWorld(const char * fileName, struct world * jello)
 {
-  int i,j,k;
-  FILE * file;
+    int i,j,k;
+    FILE * file;
 
-  file = fopen(fileName, "w");
-  if (file == NULL) {
-    printf ("can't open file\n");
-    exit(1);
-  }
+    file = fopen(fileName, "w");
+    if (file == NULL) {
+        printf ("can't open file\n");
+        exit(1);
+    }
 
-  /* write integrator algorithm */
-  fprintf(file,"%s\n",jello->integrator);
+    /* write integrator algorithm */
+    fprintf(file,"%s\n",jello->integrator);
 
-  /* write timestep */
-  fprintf(file,"%lf %d\n",jello->dt,jello->n);
+    /* write timestep */
+    fprintf(file,"%lf %d\n",jello->dt,jello->n);
 
-  /* write physical parameters */
-  fprintf(file, "%lf %lf %lf %lf\n",
+    /* write physical parameters */
+    fprintf(file, "%lf %lf %lf %lf\n",
     jello->kElastic, jello->dElastic, jello->kCollision, jello->dCollision);
 
-  /* write mass */
-  fprintf(file, "%lf\n", jello->mass);
+    /* write mass */
+    fprintf(file, "%lf\n", jello->mass);
 
-  /* write info about the plane */
-  fprintf(file, "%d\n", jello->incPlanePresent);
-  if (jello->incPlanePresent == 1)
+    /* write info about the plane */
+    fprintf(file, "%d\n", jello->incPlanePresent);
+    if (jello->incPlanePresent == 1)
     fprintf(file, "%lf %lf %lf %lf\n", jello->a, jello->b, jello->c, jello->d);
 
-  /* write info about the force field */
-  fprintf(file, "%d\n", jello->resolution);
-  if (jello->resolution != 0)
-    for (i=0; i<= jello->resolution-1; i++)
-      for (j=0; j<= jello->resolution-1; j++)
-        for (k=0; k<= jello->resolution-1; k++)
-          fprintf(file, "%lf %lf %lf\n",
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x,
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y,
-             jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].z);
-
-
-  /* write initial point positions */
-  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
-  {
-    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+    /* write info about the force field */
+    fprintf(file, "%d\n", jello->resolution);
+    if (jello->resolution != 0)
     {
-      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
-        fprintf(file, "%lf %lf %lf\n",
-          jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
+        for (i = 0; i <= jello->resolution - 1; i++)
+        {
+            for (j = 0; j <= jello->resolution - 1; j++)
+            {
+                for (k = 0; k <= jello->resolution - 1; k++)
+                {
+                    fprintf(file, "%lf %lf %lf\n",
+                        jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].x,
+                        jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].y,
+                        jello->forceField[i * jello->resolution * jello->resolution + j * jello->resolution + k].z);
+                }
+            }
+        }
     }
-  }
 
-  /* write initial point velocities */
-  for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
-  {
-    for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+
+    /* write initial point positions */
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
     {
-      for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
-        fprintf(file, "%lf %lf %lf\n",
-          jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+        {
+            for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
+            {
+                fprintf(file, "%lf %lf %lf\n", jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
+            }
+        }
     }
-  }
 
-  fclose(file);
+    /* write initial point velocities */
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
+    {
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+        {
+            for (k = 0; k <= JELLO_SUBDIVISIONS; k++)
+            {
+                fprintf(file, "%lf %lf %lf\n", jello->v[i][j][k].x, jello->v[i][j][k].y, jello->v[i][j][k].z);
+            }
+        }
+    }
 
-  return;
+    fclose(file);
+
+    return;
 }
 
 /* modify main to create your own world */
 int main()
 {
-  struct world jello;
-  int i,j,k;
-  double x,y,z;
+    struct world jello;
+    int i,j,k;
+    double x,y,z;
 
-  // set the integrator and the physical parameters
-  // the values below are EXAMPLES, to be modified by you as needed
-  strcpy(jello.integrator,"RK4");
-  jello.dt=0.0005000;
-  jello.n=1;
-  jello.kElastic=200;
-  jello.dElastic=0.25;
-  jello.kCollision=400.0;
-  jello.dCollision=0.25;
-  jello.mass= 1.0 / 512;
+    // set the integrator and the physical parameters
+    // the values below are EXAMPLES, to be modified by you as needed
+    strcpy(jello.integrator,"RK4");
+    jello.dt=0.0005000;
+    jello.n=1;
+    jello.kElastic=200;
+    jello.dElastic=0.25;
+    jello.kCollision=400.0;
+    jello.dCollision=0.25;
+    jello.mass= 1.0 / 512;
 
-  // set the inclined plane (not used in this assignment; ignore)
-  jello.incPlanePresent=1;
-  jello.a=-1;
-  jello.b=1;
-  jello.c=1;
-  jello.d=2;
+    // set the inclined plane (not used in this assignment; ignore)
+    jello.incPlanePresent=1;
+    jello.a=-1;
+    jello.b=1;
+    jello.c=1;
+    jello.d=2;
 
-  // set the external force field
-  jello.resolution=30;
-  jello.forceField =
-    (struct point *)malloc(jello.resolution*jello.resolution*jello.resolution*sizeof(struct point));
-  
-  // Seed random number generator
-  srand(time(NULL));
-  
-  for (i=0; i<= jello.resolution-1; i++)
-    for (j=0; j<= jello.resolution-1; j++)
-      for (k=0; k<= jello.resolution-1; k++)
-      {
-        // set the force at node i,j,k
-        // actual space location = x,y,z
-        x = -2 + 4*(1.0 * i / (jello.resolution-1));
-        y = -2 + 4*(1.0 * j / (jello.resolution-1));
-        z = -2 + 4*(1.0 * k / (jello.resolution-1));
+    // set the external force field
+    jello.resolution=30;
+    jello.forceField = (struct point *)malloc(jello.resolution*jello.resolution*jello.resolution*sizeof(struct point));
 
-        // Random force field
-        double strength = 20.0;  // Adjust this to control force magnitude
+    // Seed random number generator
+    srand(time(NULL));
+
+    for (i = 0; i <= jello.resolution - 1; i++)
+    {
+        for (j = 0; j <= jello.resolution - 1; j++)
+        {
+            for (k=0; k<= jello.resolution-1; k++)
+            {
+                // set the force at node i,j,k
+                // actual space location = x,y,z
+                x = -2 + 4*(1.0 * i / (jello.resolution-1));
+                y = -2 + 4*(1.0 * j / (jello.resolution-1));
+                z = -2 + 4*(1.0 * k / (jello.resolution-1));
+
+                // Random force field
+                double strength = 20.0;  // Adjust this to control force magnitude
         
-        // Generate random numbers in range [-1, 1]
-        double randomX = (2.0 * rand() / RAND_MAX) - 1.0;
-        double randomY = (2.0 * rand() / RAND_MAX) - 1.0;
-        double randomZ = (2.0 * rand() / RAND_MAX) - 1.0;
+                // Generate random numbers in range [-1, 1]
+                double randomX = (2.0 * rand() / RAND_MAX) - 1.0;
+                double randomY = (2.0 * rand() / RAND_MAX) - 1.0;
+                double randomZ = (2.0 * rand() / RAND_MAX) - 1.0;
         
-        double forceX = randomX * strength;
-        double forceY = randomY * strength;
-        double forceZ = randomZ * strength;
+                double forceX = randomX * strength;
+                double forceY = randomY * strength;
+                double forceZ = randomZ * strength;
 
-        jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].x = forceX;
-        jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].y = forceY;
-        jello.forceField[i * jello.resolution * jello.resolution
-          + j * jello.resolution + k].z = forceZ;
-      }
+                int forceFieldIndex = i * jello.resolution * jello.resolution + j * jello.resolution + k;
+                jello.forceField[forceFieldIndex].x = forceX;
+                jello.forceField[forceFieldIndex].y = forceY;
+                jello.forceField[forceFieldIndex].z = forceZ;
+            }
+        }
+    }
 
   // set the positions of control points
-  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
-    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
-      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
-      {
-        jello.p[i][j][k].x=1.0 * i / JELLO_SUBDIVISIONS;
-        jello.p[i][j][k].y=1.0 * j / JELLO_SUBDIVISIONS;
-        jello.p[i][j][k].z=1.0 * k / JELLO_SUBDIVISIONS;
-        if ((i==JELLO_SUBDIVISIONS) && (j==JELLO_SUBDIVISIONS) && (k==JELLO_SUBDIVISIONS))
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
+    {
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
         {
-          jello.p[i][j][k].x=1.0 + 1.0 / JELLO_SUBDIVISIONS;
-          jello.p[i][j][k].y=1.0 + 1.0 / JELLO_SUBDIVISIONS;
-          jello.p[i][j][k].z=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+            for (k=0; k<=JELLO_SUBDIVISIONS; k++)
+            {
+                jello.p[i][j][k].x=1.0 * i / JELLO_SUBDIVISIONS;
+                jello.p[i][j][k].y=1.0 * j / JELLO_SUBDIVISIONS;
+                jello.p[i][j][k].z=1.0 * k / JELLO_SUBDIVISIONS;
+                if ((i==JELLO_SUBDIVISIONS) && (j==JELLO_SUBDIVISIONS) && (k==JELLO_SUBDIVISIONS))
+                {
+                    jello.p[i][j][k].x=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+                    jello.p[i][j][k].y=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+                    jello.p[i][j][k].z=1.0 + 1.0 / JELLO_SUBDIVISIONS;
+                }
+            }
         }
-      }
+    }
 
   // set the velocities of control points
-  for (i=0; i<=JELLO_SUBDIVISIONS; i++)
-    for (j=0; j<=JELLO_SUBDIVISIONS; j++)
-      for (k=0; k<=JELLO_SUBDIVISIONS; k++)
-      {
-        jello.v[i][j][k].x=10.0;
-        jello.v[i][j][k].y=-10.0;
-        jello.v[i][j][k].z=20.0;
-      }
+    for (i = 0; i <= JELLO_SUBDIVISIONS; i++)
+    {
+        for (j = 0; j <= JELLO_SUBDIVISIONS; j++)
+        {
+            for (k=0; k<=JELLO_SUBDIVISIONS; k++)
+            {
+                jello.v[i][j][k].x=10.0;
+                jello.v[i][j][k].y=-10.0;
+                jello.v[i][j][k].z=20.0;
+            }
+        }
+    }
 
-  // write the jello variable out to file on disk
-  // change jello.w to whatever you need
-  writeWorld("jello.w",&jello);
+    // write the jello variable out to file on disk
+    // change jello.w to whatever you need
+    writeWorld("jello.w",&jello);
 
-  return 0;
+    return 0;
 }
 
