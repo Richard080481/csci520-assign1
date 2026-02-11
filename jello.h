@@ -17,7 +17,8 @@
 #endif
 #include "openGL-headers.h"
 #include "pic.h"
-
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -26,37 +27,6 @@
 #define pi 3.141592653589793238462643383279
 #define JELLO_SUBPOINTS 8
 #define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS-1)
-
-#if USE_GLUT
-#else
-#include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
-#include <iostream>
-#include <stdexcept>
-#include <vector>
-#include <cstring>
-#include <cstdlib>
-#include <optional>
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif // #if NDEBUG
-
-const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-
-    bool isComplete()
-    {
-        return graphicsFamily.has_value();
-    }
-};
-
-#endif // #if USE_GLUT
 
 // camera angles
 extern double Theta;

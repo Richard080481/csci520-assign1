@@ -105,6 +105,10 @@
       <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;$(SolutionDir)\external\glfw\lib-vc2022</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,6 +144,10 @@
       <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%VULKAN_SDK%\Lib;$(SolutionDir)\external\glfw\lib-vc2022</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="input.h" />
@@ -148,6 +156,7 @@
     <ClInclude Include="physics.h" />
     <ClInclude Include="pic.h" />
     <ClInclude Include="showCube.h" />
+    <ClInclude Include="vk_jello.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input.cpp" />
@@ -156,6 +165,11 @@
     <ClCompile Include="pic.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="showCube.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="compile_shaders.bat" />
+    <None Include="shader.frag" />
+    <None Include="shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
