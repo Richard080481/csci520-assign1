@@ -29,9 +29,34 @@
 
 #if USE_GLUT
 #else
-//#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
-#endif
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+#include <cstring>
+#include <cstdlib>
+#include <optional>
+
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif // #if NDEBUG
+
+const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete()
+    {
+        return graphicsFamily.has_value();
+    }
+};
+
+#endif // #if USE_GLUT
 
 // camera angles
 extern double Theta;
