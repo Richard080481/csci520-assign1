@@ -12,12 +12,12 @@
 // However, for Vulkan build, we should use GLFW.
 #if _M_X64
 #define USE_GLUT 0
+#define GLFW_INCLUDE_VULKAN
 #else
 #define USE_GLUT 1
 #endif
 #include "openGL-headers.h"
 #include "pic.h"
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <math.h>
