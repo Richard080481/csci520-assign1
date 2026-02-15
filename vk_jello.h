@@ -18,6 +18,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 
+#define VK_PI 3.141592653589793238462643383279
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
@@ -99,7 +101,7 @@ struct SwapChainSupportDetails
 
 struct Vertex
 {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription()
@@ -118,7 +120,7 @@ struct Vertex
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
         attributeDescriptions[1].binding = 0;
@@ -137,9 +139,96 @@ struct UniformBufferObject
     alignas(16) glm::mat4 proj;
 };
 
-const std::vector<Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-                                      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                                      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+const glm::vec3 grey = {0.6f, 0.6f, 0.6f};
+std::vector<Vertex> boundingBoxVertices = {
+    {{-2, -2, -2}, grey},
+    {{-2, -2, 2}, grey},
+    {{-1, -2, -2}, grey},
+    {{-1, -2, 2}, grey},
+    {{0, -2, -2}, grey},
+    {{0, -2, 2}, grey},
+    {{1, -2, -2}, grey},
+    {{1, -2, 2}, grey},
+    {{2, -2, -2}, grey},
+    {{2, -2, 2}, grey},
+
+    {{-2, -2, -2}, grey},
+    {{2, -2, -2}, grey},
+    {{-2, -2, -1}, grey},
+    {{2, -2, -1}, grey},
+    {{-2, -2, 0}, grey},
+    {{2, -2, 0}, grey},
+    {{-2, -2, 1}, grey},
+    {{2, -2, 1}, grey},
+    {{-2, -2, 2}, grey},
+    {{2, -2, 2}, grey},
+
+    {{-2, 2, -2}, grey},
+    {{-2, 2, 2}, grey},
+    {{-1, 2, -2}, grey},
+    {{-1, 2, 2}, grey},
+    {{0, 2, -2}, grey},
+    {{0, 2, 2}, grey},
+    {{1, 2, -2}, grey},
+    {{1, 2, 2}, grey},
+    {{2, 2, -2}, grey},
+    {{2, 2, 2}, grey},
+
+    {{-2, 2, -2}, grey},
+    {{2, 2, -2}, grey},
+    {{-2, 2, -1}, grey},
+    {{2, 2, -1}, grey},
+    {{-2, 2, 0}, grey},
+    {{2, 2, 0}, grey},
+    {{-2, 2, 1}, grey},
+    {{2, 2, 1}, grey},
+    {{-2, 2, 2}, grey},
+    {{2, 2, 2}, grey},
+
+    {{-2, -2, -2}, grey},
+    {{-2, -2, 2}, grey},
+    {{-2, -1, -2}, grey},
+    {{-2, -1, 2}, grey},
+    {{-2, 0, -2}, grey},
+    {{-2, 0, 2}, grey},
+    {{-2, 1, -2}, grey},
+    {{-2, 1, 2}, grey},
+    {{-2, 2, -2}, grey},
+    {{-2, 2, 2}, grey},
+
+    {{-2, -2, -2}, grey},
+    {{-2, 2, -2}, grey},
+    {{-2, -2, -1}, grey},
+    {{-2, 2, -1}, grey},
+    {{-2, -2, 0}, grey},
+    {{-2, 2, 0}, grey},
+    {{-2, -2, 1}, grey},
+    {{-2, 2, 1}, grey},
+    {{-2, -2, 2}, grey},
+    {{-2, 2, 2}, grey},
+
+    {{2, -2, -2}, grey},
+    {{2, -2, 2}, grey},
+    {{2, -1, -2}, grey},
+    {{2, -1, 2}, grey},
+    {{2, 0, -2}, grey},
+    {{2, 0, 2}, grey},
+    {{2, 1, -2}, grey},
+    {{2, 1, 2}, grey},
+    {{2, 2, -2}, grey},
+    {{2, 2, 2}, grey},
+    // j lines
+    {{2, -2, -2}, grey},
+    {{2, 2, -2}, grey},
+    {{2, -2, -1}, grey},
+    {{2, 2, -1}, grey},
+    {{2, -2, 0}, grey},
+    {{2, 2, 0}, grey},
+    {{2, -2, 1}, grey},
+    {{2, 2, 1}, grey},
+    {{2, -2, 2}, grey},
+    {{2, 2, 2}, grey}
+};
 
 class Vk_Jello
 {
@@ -253,18 +342,21 @@ class Vk_Jello
 
     void updateUniformBuffer(uint32_t currentImage)
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time =
-            std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
-                .count();
-
+        double Theta = VK_PI / 6.0;
+        double Phi = VK_PI / 6.0;
+        double R = 6.0;
         UniformBufferObject ubo{};
-        ubo.model =
-            glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::mat4(1.0f);
+
+        glm::vec3 eye =
+            glm::vec3(R * cos(Phi) * cos(Theta), R * sin(Phi) * cos(Theta), R * sin(Theta));
+
+        glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
+
+        ubo.view = glm::lookAt(eye, center, up);
+
         ubo.proj =
             glm::perspective(glm::radians(45.0f),
                              swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
@@ -783,7 +875,7 @@ class Vk_Jello
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         VkPipelineViewportStateCreateInfo viewportState{};
@@ -907,7 +999,7 @@ class Vk_Jello
 
     void createVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize bufferSize = sizeof(boundingBoxVertices[0]) * boundingBoxVertices.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -917,7 +1009,7 @@ class Vk_Jello
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t)bufferSize);
+        memcpy(data, boundingBoxVertices.data(), (size_t)bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize,
@@ -1172,7 +1264,7 @@ void createSyncObjects()
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
                                 1, &descriptorSets[currentFrame], 0, nullptr);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdDraw(commandBuffer, static_cast<uint32_t>(boundingBoxVertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
