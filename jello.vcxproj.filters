@@ -61,13 +61,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.vert">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shader.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="compile_shaders.bat">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shader.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shader.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
