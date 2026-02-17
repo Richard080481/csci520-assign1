@@ -156,6 +156,7 @@
     <ClInclude Include="physics.h" />
     <ClInclude Include="pic.h" />
     <ClInclude Include="showCube.h" />
+    <ClInclude Include="types.h" />
     <ClInclude Include="vk_jello.h" />
   </ItemGroup>
   <ItemGroup>

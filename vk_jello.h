@@ -1,3 +1,6 @@
+#ifndef VK_JELLO_H_
+#define VK_JELLO_H_
+
 #if _M_X64
 #define GLFW_INCLUDE_VULKAN
 #include <algorithm>
@@ -17,6 +20,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include "types.h"
 
 #define VK_PI 3.141592653589793238462643383279
 
@@ -139,100 +143,11 @@ struct UniformBufferObject
     alignas(16) glm::mat4 proj;
 };
 
-const glm::vec3 grey = {0.6f, 0.6f, 0.6f};
-std::vector<Vertex> boundingBoxVertices = {
-    {{-2, -2, -2}, grey},
-    {{-2, -2, 2}, grey},
-    {{-1, -2, -2}, grey},
-    {{-1, -2, 2}, grey},
-    {{0, -2, -2}, grey},
-    {{0, -2, 2}, grey},
-    {{1, -2, -2}, grey},
-    {{1, -2, 2}, grey},
-    {{2, -2, -2}, grey},
-    {{2, -2, 2}, grey},
-
-    {{-2, -2, -2}, grey},
-    {{2, -2, -2}, grey},
-    {{-2, -2, -1}, grey},
-    {{2, -2, -1}, grey},
-    {{-2, -2, 0}, grey},
-    {{2, -2, 0}, grey},
-    {{-2, -2, 1}, grey},
-    {{2, -2, 1}, grey},
-    {{-2, -2, 2}, grey},
-    {{2, -2, 2}, grey},
-
-    {{-2, 2, -2}, grey},
-    {{-2, 2, 2}, grey},
-    {{-1, 2, -2}, grey},
-    {{-1, 2, 2}, grey},
-    {{0, 2, -2}, grey},
-    {{0, 2, 2}, grey},
-    {{1, 2, -2}, grey},
-    {{1, 2, 2}, grey},
-    {{2, 2, -2}, grey},
-    {{2, 2, 2}, grey},
-
-    {{-2, 2, -2}, grey},
-    {{2, 2, -2}, grey},
-    {{-2, 2, -1}, grey},
-    {{2, 2, -1}, grey},
-    {{-2, 2, 0}, grey},
-    {{2, 2, 0}, grey},
-    {{-2, 2, 1}, grey},
-    {{2, 2, 1}, grey},
-    {{-2, 2, 2}, grey},
-    {{2, 2, 2}, grey},
-
-    {{-2, -2, -2}, grey},
-    {{-2, -2, 2}, grey},
-    {{-2, -1, -2}, grey},
-    {{-2, -1, 2}, grey},
-    {{-2, 0, -2}, grey},
-    {{-2, 0, 2}, grey},
-    {{-2, 1, -2}, grey},
-    {{-2, 1, 2}, grey},
-    {{-2, 2, -2}, grey},
-    {{-2, 2, 2}, grey},
-
-    {{-2, -2, -2}, grey},
-    {{-2, 2, -2}, grey},
-    {{-2, -2, -1}, grey},
-    {{-2, 2, -1}, grey},
-    {{-2, -2, 0}, grey},
-    {{-2, 2, 0}, grey},
-    {{-2, -2, 1}, grey},
-    {{-2, 2, 1}, grey},
-    {{-2, -2, 2}, grey},
-    {{-2, 2, 2}, grey},
-
-    {{2, -2, -2}, grey},
-    {{2, -2, 2}, grey},
-    {{2, -1, -2}, grey},
-    {{2, -1, 2}, grey},
-    {{2, 0, -2}, grey},
-    {{2, 0, 2}, grey},
-    {{2, 1, -2}, grey},
-    {{2, 1, 2}, grey},
-    {{2, 2, -2}, grey},
-    {{2, 2, 2}, grey},
-    // j lines
-    {{2, -2, -2}, grey},
-    {{2, 2, -2}, grey},
-    {{2, -2, -1}, grey},
-    {{2, 2, -1}, grey},
-    {{2, -2, 0}, grey},
-    {{2, 2, 0}, grey},
-    {{2, -2, 1}, grey},
-    {{2, 2, 1}, grey},
-    {{2, -2, 2}, grey},
-    {{2, 2, 2}, grey}
-};
-
 class Vk_Jello
 {
-  public:
+public:
+    struct world jello;
+
     void run()
     {
         initWindow();
@@ -241,7 +156,7 @@ class Vk_Jello
         cleanup();
     }
 
-  private:
+private:
     GLFWwindow* window;
 
     VkInstance instance;
@@ -281,8 +196,13 @@ class Vk_Jello
 
     bool framebufferResized = false;
 
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
+
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -323,7 +243,9 @@ class Vk_Jello
         createLineGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+        initVertexIndexBuffers();
         createVertexBuffer();
+        createIndexBuffer();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -478,6 +400,9 @@ class Vk_Jello
 
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
+
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        vkFreeMemory(device, indexBufferMemory, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -1119,11 +1044,128 @@ class Vk_Jello
         }
     }
 
+    void initVertexIndexBuffers()
+    {
+        const glm::vec3 grey = {0.6f, 0.6f, 0.6f};
+
+        std::vector<Vertex> boundingBoxVertices = {
+            // Unique vertices only
+            {{-2, -2, -2}, grey}, // 0
+            {{-2, -2, -1}, grey}, // 1
+            {{-2, -2, 0}, grey},  // 2
+            {{-2, -2, 1}, grey},  // 3
+            {{-2, -2, 2}, grey},  // 4
+            {{-2, -1, -2}, grey}, // 5
+            {{-2, -1, 2}, grey},  // 6
+            {{-2, 0, -2}, grey},  // 7
+            {{-2, 0, 2}, grey},   // 8
+            {{-2, 1, -2}, grey},  // 9
+            {{-2, 1, 2}, grey},   // 10
+            {{-2, 2, -2}, grey},  // 11
+            {{-2, 2, -1}, grey},  // 12
+            {{-2, 2, 0}, grey},   // 13
+            {{-2, 2, 1}, grey},   // 14
+            {{-2, 2, 2}, grey},   // 15
+            {{-1, -2, -2}, grey}, // 16
+            {{-1, -2, 2}, grey},  // 17
+            {{-1, 2, -2}, grey},  // 18
+            {{-1, 2, 2}, grey},   // 19
+            {{0, -2, -2}, grey},  // 20
+            {{0, -2, 2}, grey},   // 21
+            {{0, 2, -2}, grey},   // 22
+            {{0, 2, 2}, grey},    // 23
+            {{1, -2, -2}, grey},  // 24
+            {{1, -2, 2}, grey},   // 25
+            {{1, 2, -2}, grey},   // 26
+            {{1, 2, 2}, grey},    // 27
+            {{2, -2, -2}, grey},  // 28
+            {{2, -2, -1}, grey},  // 29
+            {{2, -2, 0}, grey},   // 30
+            {{2, -2, 1}, grey},   // 31
+            {{2, -2, 2}, grey},   // 32
+            {{2, -1, -2}, grey},  // 33
+            {{2, -1, 2}, grey},   // 34
+            {{2, 0, -2}, grey},   // 35
+            {{2, 0, 2}, grey},    // 36
+            {{2, 1, -2}, grey},   // 37
+            {{2, 1, 2}, grey},    // 38
+            {{2, 2, -2}, grey},   // 39
+            {{2, 2, -1}, grey},   // 40
+            {{2, 2, 0}, grey},    // 41
+            {{2, 2, 1}, grey},    // 42
+            {{2, 2, 2}, grey}     // 43
+        };
+
+        std::vector<uint16_t> boundingBoxIndices = {
+            // Bottom face (y = -2) - vertical lines (along z)
+            0, 4,   // x=-2
+            16, 17, // x=-1
+            20, 21, // x=0
+            24, 25, // x=1
+            28, 32, // x=2
+
+            // Bottom face (y = -2) - horizontal lines (along x)
+            0, 28, // z=-2
+            1, 29, // z=-1
+            2, 30, // z=0
+            3, 31, // z=1
+            4, 32, // z=2
+
+            // Top face (y = 2) - vertical lines (along z)
+            11, 15, // x=-2
+            18, 19, // x=-1
+            22, 23, // x=0
+            26, 27, // x=1
+            39, 43, // x=2
+
+            // Top face (y = 2) - horizontal lines (along x)
+            11, 39, // z=-2
+            12, 40, // z=-1
+            13, 41, // z=0
+            14, 42, // z=1
+            15, 43, // z=2
+
+            // Left face (x = -2) - vertical lines (along z)
+            0, 4,   // y=-2
+            5, 6,   // y=-1
+            7, 8,   // y=0
+            9, 10,  // y=1
+            11, 15, // y=2
+
+            // Left face (x = -2) - horizontal lines (along y)
+            0, 11, // z=-2
+            1, 12, // z=-1
+            2, 13, // z=0
+            3, 14, // z=1
+            4, 15, // z=2
+
+            // Right face (x = 2) - vertical lines (along z)
+            28, 32, // y=-2
+            33, 34, // y=-1
+            35, 36, // y=0
+            37, 38, // y=1
+            39, 43, // y=2
+
+            // Right face (x = 2) - horizontal lines (along y)
+            28, 39, // z=-2
+            29, 40, // z=-1
+            30, 41, // z=0
+            31, 42, // z=1
+            32, 43  // z=2
+        };
+
+        vertices.resize(boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
+        memcpy(vertices.data(), boundingBoxVertices.data(), boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
+
+        indices.resize(boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
+        memcpy(indices.data(), boundingBoxIndices.data(), boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
+    }
+
     void createVertexBuffer()
     {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(boundingBoxVertices[0]) * boundingBoxVertices.size();
+        bufferInfo.size = sizeof(vertices[0]) * vertices .size();
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -1151,8 +1193,28 @@ class Vk_Jello
 
         void* data;
         vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, boundingBoxVertices.data(), (size_t)bufferInfo.size);
+        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
         vkUnmapMemory(device, vertexBufferMemory);
+    }
+
+    void createIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -1393,11 +1455,12 @@ void createSyncObjects()
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
                                 1, &descriptorSets[currentFrame], 0, nullptr);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(boundingBoxVertices.size()), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -1618,3 +1681,4 @@ void createSyncObjects()
     }
 };
 #endif // #if USE_GLUT
+#endif // #ifndef VK_JELLO_H

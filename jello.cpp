@@ -359,6 +359,7 @@ int main(int argc, char** argv)
     //glfwTerminate();
 
     Vk_Jello app;
+    app.jello = jello;
 
     try
     {
