@@ -230,6 +230,14 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Jello Cube", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+        glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode,
+                                      int action, int mods) {
+            if (key == GLFW_KEY_P && action == GLFW_PRESS)
+            {
+                pause = !pause;
+            }
+        });
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -271,9 +279,12 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            physicsCompute();
-            particlePosUpdate();
-            drawFrame();
+            if (!pause)
+            {
+                physicsCompute();
+                particlePosUpdate();
+                drawFrame();
+            }
         }
 
         vkDeviceWaitIdle(device);
@@ -1213,9 +1224,7 @@ private:
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
-                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         if (vkAllocateMemory(device, &allocInfo, nullptr, &m_boundingBoxVertexBufferMemory) != VK_SUCCESS)
         {
