@@ -2,6 +2,7 @@
 #define VK_JELLO_H_
 
 #if _M_X64
+#define NOMINMAX
 #define GLFW_INCLUDE_VULKAN
 #include <algorithm>
 #include <cstdint>
@@ -21,6 +22,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 #include "types.h"
+#include "physics.h"
 
 #define VK_PI 3.141592653589793238462643383279
 
@@ -269,8 +271,8 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
-            // physicsStep(&jello);
-            // update(&jello);
+            physicsCompute();
+            particlePosUpdate();
             drawFrame();
         }
 
@@ -285,8 +287,7 @@ private:
         UniformBufferObject ubo{};
         ubo.model = glm::mat4(1.0f);
 
-        glm::vec3 eye =
-            glm::vec3(R * cos(Phi) * cos(Theta), R * sin(Phi) * cos(Theta), R * sin(Theta));
+        glm::vec3 eye = glm::vec3(R * cos(Phi) * cos(Theta), R * sin(Phi) * cos(Theta), R * sin(Theta));
 
         glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -294,12 +295,31 @@ private:
 
         ubo.view = glm::lookAt(eye, center, up);
 
-        ubo.proj =
-            glm::perspective(glm::radians(45.0f),
-                             swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+        ubo.proj = glm::perspective(glm::radians(60.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    }
+
+    void physicsCompute()
+    {
+        if (strcmp(jello.integrator, "Euler") == 0)
+        {
+            Euler(&jello);
+        }
+        else
+        {
+            RK4(&jello);
+        }
+    }
+
+    void particlePosUpdate()
+    {
+        updateJelloVertexIndexBuffers();
+        void* data;
+        vkMapMemory(device, m_jelloVertexBufferMemory, 0, sizeof(m_jelloVertices[0]) * m_jelloVertices.size(), 0, &data);
+        memcpy(data, m_jelloVertices.data(), sizeof(m_jelloVertices[0]) * m_jelloVertices.size());
+        vkUnmapMemory(device, m_jelloVertexBufferMemory);
     }
 
     void drawFrame()
@@ -1228,6 +1248,43 @@ private:
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void updateJelloVertexIndexBuffers()
+    {
+        m_jelloVertices.clear();
+        const glm::vec3 black = {0.0f, 0.0f, 0.0f};
+        std::vector<Vertex> jelloVertices;
+        std::vector<uint16_t> jelloIndices;
+        int currentIndex = 0;
+
+        for (int i = 0; i < JELLO_SUBPOINTS; i++)
+        {
+            for (int j = 0; j < JELLO_SUBPOINTS; j++)
+            {
+                for (int k = 0; k < JELLO_SUBPOINTS; k++)
+                {
+                    if (i * j * k * (JELLO_SUBDIVISIONS - i) * (JELLO_SUBDIVISIONS - j) *
+                            (JELLO_SUBDIVISIONS - k) ==
+                        0)
+                    {
+                        Vertex vertex = {
+                            {jello.p[i][j][k].x, jello.p[i][j][k].y, jello.p[i][j][k].z}, black};
+                        jelloVertices.push_back(vertex);
+                        jelloIndices.push_back(currentIndex);
+                        currentIndex++;
+                    }
+                }
+            }
+        }
+
+        m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
+        memcpy(m_jelloVertices.data(), jelloVertices.data(),
+               jelloVertices.size() * sizeof(jelloVertices[0]));
+
+        m_jelloIndices.resize(jelloIndices.size() * sizeof(jelloIndices[0]));
+        memcpy(m_jelloIndices.data(), jelloIndices.data(),
+               jelloIndices.size() * sizeof(jelloIndices[0]));
     }
 
     void initJelloVertexIndexBuffers()
