@@ -196,13 +196,21 @@ private:
 
     bool framebufferResized = false;
 
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
+    std::vector<Vertex> m_boundingBoxVertices;
+    std::vector<uint16_t> m_boundingBoxIndices;
 
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    VkBuffer m_boundingBoxVertexBuffer;
+    VkDeviceMemory m_boundingBoxVertexBufferMemory;
+    VkBuffer m_boundingBoxIndexBuffer;
+    VkDeviceMemory m_boundingBoxIndexBufferMemory;
+
+    std::vector<Vertex> m_jelloVertices;
+    std::vector<uint16_t> m_jelloIndices;
+
+    VkBuffer m_jelloVertexBuffer;
+    VkDeviceMemory m_jelloVertexBufferMemory;
+    VkBuffer m_jelloIndexBuffer;
+    VkDeviceMemory m_jelloIndexBufferMemory;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -243,9 +251,12 @@ private:
         createLineGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
-        initVertexIndexBuffers();
-        createVertexBuffer();
-        createIndexBuffer();
+        initBoundingBoxVertexIndexBuffers();
+        createBoundingBoxVertexBuffer();
+        createBoundingBoxIndexBuffer();
+        initJelloVertexIndexBuffers();
+        createJelloVertexBuffer();
+        createJelloIndexBuffer();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -258,6 +269,8 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+            // physicsStep(&jello);
+            // update(&jello);
             drawFrame();
         }
 
@@ -398,11 +411,11 @@ private:
 
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
-        vkDestroyBuffer(device, vertexBuffer, nullptr);
-        vkFreeMemory(device, vertexBufferMemory, nullptr);
+        vkDestroyBuffer(device, m_boundingBoxVertexBuffer, nullptr);
+        vkFreeMemory(device, m_boundingBoxVertexBufferMemory, nullptr);
 
-        vkDestroyBuffer(device, indexBuffer, nullptr);
-        vkFreeMemory(device, indexBufferMemory, nullptr);
+        vkDestroyBuffer(device, m_boundingBoxIndexBuffer, nullptr);
+        vkFreeMemory(device, m_boundingBoxIndexBufferMemory, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -1044,7 +1057,7 @@ private:
         }
     }
 
-    void initVertexIndexBuffers()
+    void initBoundingBoxVertexIndexBuffers()
     {
         const glm::vec3 grey = {0.6f, 0.6f, 0.6f};
 
@@ -1154,28 +1167,28 @@ private:
             32, 43  // z=2
         };
 
-        vertices.resize(boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
-        memcpy(vertices.data(), boundingBoxVertices.data(), boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
+        m_boundingBoxVertices.resize(boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
+        memcpy(m_boundingBoxVertices.data(), boundingBoxVertices.data(), boundingBoxVertices.size() * sizeof(boundingBoxVertices[0]));
 
-        indices.resize(boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
-        memcpy(indices.data(), boundingBoxIndices.data(), boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
+        m_boundingBoxIndices.resize(boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
+        memcpy(m_boundingBoxIndices.data(), boundingBoxIndices.data(), boundingBoxIndices.size() * sizeof(boundingBoxIndices[0]));
     }
 
-    void createVertexBuffer()
+    void createBoundingBoxVertexBuffer()
     {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertices[0]) * vertices .size();
+        bufferInfo.size = sizeof(m_boundingBoxVertices[0]) * m_boundingBoxVertices .size();
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &m_boundingBoxVertexBuffer) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create vertex buffer!");
         }
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
+        vkGetBufferMemoryRequirements(device, m_boundingBoxVertexBuffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1184,21 +1197,21 @@ private:
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &m_boundingBoxVertexBufferMemory) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
 
-        vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+        vkBindBufferMemory(device, m_boundingBoxVertexBuffer, m_boundingBoxVertexBufferMemory, 0);
 
         void* data;
-        vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-        vkUnmapMemory(device, vertexBufferMemory);
+        vkMapMemory(device, m_boundingBoxVertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        memcpy(data, m_boundingBoxVertices.data(), (size_t)bufferInfo.size);
+        vkUnmapMemory(device, m_boundingBoxVertexBufferMemory);
     }
 
-    void createIndexBuffer() {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    void createBoundingBoxIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(m_boundingBoxIndices[0]) * m_boundingBoxIndices.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1206,12 +1219,107 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t) bufferSize);
+        memcpy(data, m_boundingBoxIndices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_boundingBoxIndexBuffer, m_boundingBoxIndexBufferMemory);
 
-        copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+        copyBuffer(stagingBuffer, m_boundingBoxIndexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void initJelloVertexIndexBuffers()
+    {
+        const glm::vec3 black = {0.0f, 0.0f, 0.0f};
+        std::vector<Vertex> jelloVertices;
+        std::vector<uint16_t> jelloIndices;
+        int currentIndex = 0;
+
+        for (int i = 0; i < JELLO_SUBPOINTS; i++)
+        {
+            for (int j = 0; j < JELLO_SUBPOINTS; j++)
+            {
+                for (int k = 0; k < JELLO_SUBPOINTS; k++)
+                {
+                    if (i * j * k * (JELLO_SUBDIVISIONS - i) * (JELLO_SUBDIVISIONS - j) * (JELLO_SUBDIVISIONS - k) == 0)
+                    {
+                        Vertex vertex = {{jello.p[i][j][k].x, jello.p[i][j][k].y, jello.p[i][j][k].z},black};
+                        jelloVertices.push_back(vertex);
+                        jelloIndices.push_back(currentIndex);
+                        currentIndex++;
+                    }
+
+                }
+            }
+        }
+
+        m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
+        memcpy(m_jelloVertices.data(), jelloVertices.data(), jelloVertices.size() * sizeof(jelloVertices[0]));
+
+        m_jelloIndices.resize(jelloIndices.size() * sizeof(jelloIndices[0]));
+        memcpy(m_jelloIndices.data(), jelloIndices.data(), jelloIndices.size() * sizeof(jelloIndices[0]));
+    }
+
+    void createJelloVertexBuffer()
+    {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(m_jelloVertices[0]) * m_jelloVertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &m_jelloVertexBuffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device, m_jelloVertexBuffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
+                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &m_jelloVertexBufferMemory) !=
+            VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(device, m_jelloVertexBuffer, m_jelloVertexBufferMemory, 0);
+
+        void* data;
+        vkMapMemory(device, m_jelloVertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        memcpy(data, m_jelloVertices.data(), (size_t)bufferInfo.size);
+        vkUnmapMemory(device, m_jelloVertexBufferMemory);
+    }
+
+    void createJelloIndexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(m_jelloIndices[0]) * m_jelloIndices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, m_jelloIndices.data(), (size_t)bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize,
+                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_jelloIndexBuffer,
+                     m_jelloIndexBufferMemory);
+
+        copyBuffer(stagingBuffer, m_jelloIndexBuffer, bufferSize);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1413,6 +1521,23 @@ void createSyncObjects()
         }
     }
 
+    void bindDynamicState(VkCommandBuffer commandBuffer)
+    {
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = (float)swapChainExtent.width;
+        viewport.height = (float)swapChainExtent.height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = swapChainExtent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    }
+
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo{};
@@ -1436,31 +1561,33 @@ void createSyncObjects()
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        // Draw bounding box lines
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_lineGraphicsPipeline);
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = (float)swapChainExtent.width;
-        viewport.height = (float)swapChainExtent.height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        bindDynamicState(commandBuffer);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapChainExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        VkBuffer vertexBuffers[] = {vertexBuffer};
+        VkBuffer boundingBoxVertexBuffers[] = {m_boundingBoxVertexBuffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        // TODO: Add PipelineBarrier before host-write after vertexbuffer-read
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, boundingBoxVertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_boundingBoxIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
                                 1, &descriptorSets[currentFrame], 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_boundingBoxIndices.size()), 1, 0, 0, 0);
+
+        // Draw Jello points
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pointGraphicsPipeline);
+
+        bindDynamicState(commandBuffer);
+
+        VkBuffer jelloVertexBuffers[] = {m_jelloVertexBuffer};
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_jelloIndices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
