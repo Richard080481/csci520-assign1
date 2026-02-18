@@ -326,7 +326,7 @@ private:
 
     void particlePosUpdate()
     {
-        updateJelloVertexIndexBuffers();
+        updateJelloVertexBuffers();
         void* data;
         vkMapMemory(device, m_jelloVertexBufferMemory, 0, sizeof(m_jelloVertices[0]) * m_jelloVertices.size(), 0, &data);
         memcpy(data, m_jelloVertices.data(), sizeof(m_jelloVertices[0]) * m_jelloVertices.size());
@@ -1259,12 +1259,11 @@ private:
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
-    void updateJelloVertexIndexBuffers()
+    void updateJelloVertexBuffers()
     {
         m_jelloVertices.clear();
         const glm::vec3 black = {0.0f, 0.0f, 0.0f};
         std::vector<Vertex> jelloVertices;
-        std::vector<uint16_t> jelloIndices;
         int currentIndex = 0;
 
         for (int i = 0; i < JELLO_SUBPOINTS; i++)
@@ -1273,14 +1272,11 @@ private:
             {
                 for (int k = 0; k < JELLO_SUBPOINTS; k++)
                 {
-                    if (i * j * k * (JELLO_SUBDIVISIONS - i) * (JELLO_SUBDIVISIONS - j) *
-                            (JELLO_SUBDIVISIONS - k) ==
-                        0)
+                    if (i * j * k * (JELLO_SUBDIVISIONS - i) * (JELLO_SUBDIVISIONS - j) * (JELLO_SUBDIVISIONS - k) == 0)
                     {
                         Vertex vertex = {
                             {jello.p[i][j][k].x, jello.p[i][j][k].y, jello.p[i][j][k].z}, black};
                         jelloVertices.push_back(vertex);
-                        jelloIndices.push_back(currentIndex);
                         currentIndex++;
                     }
                 }
@@ -1290,10 +1286,6 @@ private:
         m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
         memcpy(m_jelloVertices.data(), jelloVertices.data(),
                jelloVertices.size() * sizeof(jelloVertices[0]));
-
-        m_jelloIndices.resize(jelloIndices.size() * sizeof(jelloIndices[0]));
-        memcpy(m_jelloIndices.data(), jelloIndices.data(),
-               jelloIndices.size() * sizeof(jelloIndices[0]));
     }
 
     void initJelloVertexIndexBuffers()
