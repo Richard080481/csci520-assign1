@@ -1,5 +1,4 @@
 # Visual Studio / MSBuild
-*.vcxproj.user
 *.suo
 *.user
 .vs/
@@ -20,8 +19,6 @@ obj/
 *.jpg
 
 # Third-party / generated libs
-freeglut-3.0.0-win32/bin/
-freeglut-3.0.0-win32/lib/
 packages/
 jello/x64/Debug/
 jello/x64/Release/
