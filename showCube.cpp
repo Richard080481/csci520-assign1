@@ -8,6 +8,7 @@
 #include "showCube.h"
 #include "jello.h"
 
+#if !VULKAN_BUILD
 int pointMap(int side, int i, int j)
 {
     int r;
@@ -295,3 +296,5 @@ void showBoundingBox()
 
     return;
 }
+
+#endif // #if VULKAN_BUILD

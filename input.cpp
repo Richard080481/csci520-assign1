@@ -8,6 +8,7 @@
 #include "input.h"
 #include "jello.h"
 
+#if !VULKAN_BUILD
 /* Write a screenshot, in the PPM format, to the specified filename, in PPM format */
 void saveScreenshot(int windowWidth, int windowHeight, char* filename)
 {
@@ -65,6 +66,7 @@ void mouseMotion(int x, int y)
     g_vMousePos[0] = x;
     g_vMousePos[1] = y;
 }
+#endif // #if !VULKAN_BUILD
 
 #if USE_GLUT
 void mouseButton(int button, int state, int x, int y)
@@ -136,7 +138,7 @@ void keyboardFunc(unsigned char key, int x, int y)
         break;
     }
 }
-#else
+#else // #if USE_GLUT
 void mouseButton(int button, int state, int x, int y)
 {
 
@@ -209,7 +211,7 @@ void keyboardFunc(GLFWwindow* window, unsigned char key, int x, int y)
         break;
     }
 }
-#endif
+#endif // #if USE_GLUT
 
 /* reads the world parameters from a world file */
 /* fileName = string containing the name of the world file, ex: jello1.w */

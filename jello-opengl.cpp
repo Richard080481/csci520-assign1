@@ -34,6 +34,7 @@ struct world jello;
 
 int windowWidth, windowHeight;
 
+#if !VULKAN_BUILD
 void myinit()
 {
     glMatrixMode(GL_PROJECTION);
@@ -300,3 +301,4 @@ int main(int argc, char** argv)
     return (0);
 }
 #endif // #if USE_GLUT
+#endif // #if !VULKAN_BUILD
