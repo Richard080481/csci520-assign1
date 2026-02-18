@@ -18,3 +18,4 @@ BraceWrapping:
   SplitEmptyNamespace: true
 AlignAfterOpenBracket: Align
 PointerAlignment: Left
+ColumnLimit: 256
