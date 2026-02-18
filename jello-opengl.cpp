@@ -30,6 +30,12 @@ double timeCounter = 0.0;
 // these variables control what is displayed on screen
 int shear = 0, bend = 0, structural = 1, pause = 0, viewingMode = 0, saveScreenToFile = 0;
 
+// render number of frames and stop
+int step = 0;
+
+// do physics
+int physics = 1;
+
 struct world jello;
 
 int windowWidth, windowHeight;

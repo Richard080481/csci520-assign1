@@ -26,6 +26,8 @@ struct point
 // these variables control what is displayed on the screen
 extern int shear, bend, structural, pause, viewingMode, saveScreenToFile;
 
+extern int step, physics;
+
 struct world
 {
     char integrator[10]; // "RK4" or "Euler"

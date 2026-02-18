@@ -21,7 +21,7 @@ void mouseButton(int button, int state, int x, int y);
 void keyboardFunc(unsigned char key, int x, int y);
 #else
 void mouseButton(int button, int state, int x, int y);
-void keyboardFunc(GLFWwindow* window, unsigned char key, int x, int y);
+void keyboardFunc(GLFWwindow* window, int key, int scancode, int action, int mods);
 #endif // #if USE_GLUT
 
 // read/write world files

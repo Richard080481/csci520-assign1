@@ -74,13 +74,7 @@ void Vk_Jello::Vk_Jello::initWindow()
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode,
-                                  int action, int mods) {
-        if (key == GLFW_KEY_P && action == GLFW_PRESS)
-        {
-            pause = !pause;
-        }
-    });
+    glfwSetKeyCallback(window, keyboardFunc);
 }
 
 void Vk_Jello::Vk_Jello::initVulkan()
@@ -117,12 +111,13 @@ void Vk_Jello::mainLoop()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        if (!pause)
+        if (physics && (step || !pause))
         {
             physicsCompute();
             particlePosUpdate();
         }
         drawFrame();
+        step = std::max(0, step - 1);
 
         if (pause)
         {
@@ -186,7 +181,7 @@ void Vk_Jello::drawFrame()
 {
     VkResult result = VkResult::VK_SUCCESS;
 
-    if (!pause)
+    if (!pause || step)
     {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE,
                         UINT64_MAX);

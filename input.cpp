@@ -162,53 +162,68 @@ void mouseButton(int button, int state, int x, int y)
 }
 
 // gets called whenever a key is pressed
-void keyboardFunc(GLFWwindow* window, unsigned char key, int x, int y)
+void keyboardFunc(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    switch (key)
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
-    case GLFW_KEY_ESCAPE:
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-        break;
+        switch (key)
+        {
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            break;
 
-    case GLFW_KEY_E:
-        Theta = pi / 6;
-        Phi = pi / 6;
-        viewingMode = 0;
-        break;
+        case GLFW_KEY_E:
+            Theta = pi / 6;
+            Phi = pi / 6;
+            viewingMode = 0;
+            break;
 
-    case GLFW_KEY_V:
-        viewingMode = 1 - viewingMode;
-        break;
+        case GLFW_KEY_V:
+            viewingMode = 1 - viewingMode;
+            break;
 
-    case GLFW_KEY_H:
-        shear = 1 - shear;
-        break;
+        case GLFW_KEY_H:
+            shear = 1 - shear;
+            step = 1;
+            break;
 
-    case GLFW_KEY_S:
-        structural = 1 - structural;
-        break;
+        case GLFW_KEY_S:
+            structural = 1 - structural;
+            step = 1;
+            break;
 
-    case GLFW_KEY_B:
-        bend = 1 - bend;
-        break;
+        case GLFW_KEY_B:
+            bend = 1 - bend;
+            step = 1;
+            break;
 
-    case GLFW_KEY_P:
-        pause = 1 - pause;
-        break;
+        case GLFW_KEY_P:
+            pause = 1 - pause;
+            physics = 1 - pause;
+            break;
 
-    case GLFW_KEY_Z:
-        R -= 0.2;
-        if (R < 0.2)
-            R = 0.2;
-        break;
+        case GLFW_KEY_N:
+            if (pause)
+            {
+                step = 1;
+                physics = 1;
+            }
+            break;
 
-    case GLFW_KEY_X:
-        R += 0.2;
-        break;
+        case GLFW_KEY_Z:
+            R -= 0.2;
+            if (R < 0.2)
+                R = 0.2;
+            break;
 
-    case GLFW_KEY_SPACE:
-        saveScreenToFile = 1 - saveScreenToFile;
-        break;
+        case GLFW_KEY_X:
+            R += 0.2;
+            break;
+
+        case GLFW_KEY_SPACE:
+            saveScreenToFile = 1 - saveScreenToFile;
+            break;
+        }
     }
 }
 #endif // #if USE_GLUT
