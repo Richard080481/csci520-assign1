@@ -47,7 +47,7 @@
     <ClCompile Include="input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="jello.cpp">
+    <ClCompile Include="jello-opengl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="physics.cpp">
@@ -60,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="showCube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vk_jello.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

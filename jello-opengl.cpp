@@ -8,7 +8,6 @@
 
 */
 
-#include "vk_jello.h"
 #include "jello.h"
 #include "input.h"
 #include "physics.h"
@@ -248,6 +247,7 @@ void doIdle()
 #endif
 }
 
+#if USE_GLUT
 int main(int argc, char** argv)
 {
     if (argc < 2)
@@ -262,7 +262,6 @@ int main(int argc, char** argv)
     windowWidth = 640;
     windowHeight = 480;
 
-#if USE_GLUT
     glutInit(&argc, argv);
 
     /* double buffered window, use depth testing, 640x480 */
@@ -298,82 +297,6 @@ int main(int argc, char** argv)
     /* forever sink in the black hole */
     glutMainLoop();
 
-#else
-
-    //if (!glfwInit())
-    //    return -1;
-
-    //GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Jello cube", NULL, NULL);
-    //if (!window)
-    //{
-    //    glfwTerminate();
-    //    return -1;
-    //}
-
-    //glfwMakeContextCurrent(window);
-
-    //glfwSetFramebufferSizeCallback(
-    //    window, [](GLFWwindow* w, int width, int height) { reshape(width, height); });
-
-    //glfwSetKeyCallback(window, [](GLFWwindow* w, int key, int scancode, int action, int mods) {
-    //    if (action == GLFW_PRESS)
-    //    {
-    //        keyboardFunc(w, (unsigned char)key, 0, 0);
-    //    }
-    //});
-
-    //glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
-    //    double xpos, ypos;
-    //    glfwGetCursorPos(w, &xpos, &ypos);
-    //    mouseButton(button, action, (int)xpos, (int)ypos);
-    //    printf("button: %d, state: %d\n", button, action);
-    //});
-
-    //glfwSetCursorPosCallback(window, [](GLFWwindow* w, double xpos, double ypos) {
-    //    if ((glfwGetMouseButton(w, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) ||
-    //        (glfwGetMouseButton(w, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
-    //    {
-    //        mouseMotionDrag((int)xpos, (int)ypos);
-    //    }
-    //    else
-    //    {
-    //        mouseMotion((int)xpos, (int)ypos);
-    //    }
-    //});
-
-    //myinit();
-
-    //reshape(windowWidth, windowHeight);
-
-    //while (!glfwWindowShouldClose(window))
-    //{
-    //    doIdle();
-
-    //    display();
-
-    //    glfwSwapBuffers(window);
-
-    //    glfwPollEvents();
-    //}
-
-    //glfwTerminate();
-
-    Vk_Jello app;
-    app.jello = jello;
-
-    try
-    {
-        app.run();
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-
-#endif
-
     return (0);
 }
+#endif // #if USE_GLUT

@@ -11,11 +11,13 @@
 // Use glut on 32-bit Windows, and use GLFW on 64-bit Windows and all other platforms. This is because the 64-bit version of glut is old and does not support modern OpenGL features, which causes compilation errors on 64-bit Windows. On 32-bit Windows, we can use the newer version of glut without issues.
 // However, for Vulkan build, we should use GLFW.
 #if _M_X64
-#define USE_GLUT 0
+#define VULKAN_BUILD 1
 #define GLFW_INCLUDE_VULKAN
-#else
-#define USE_GLUT 1
-#endif
+#else // #if _M_X64
+#define VULKAN_BUILD 0
+#endif // #if _M_X64
+#define USE_GLUT (!VULKAN_BUILD)
+
 #include "openGL-headers.h"
 #include "pic.h"
 #include <GLFW/glfw3.h>

@@ -161,11 +161,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input.cpp" />
-    <ClCompile Include="jello.cpp" />
+    <ClCompile Include="jello-opengl.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="pic.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="showCube.cpp" />
+    <ClCompile Include="vk_jello.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="compile_shaders.bat" />
