@@ -1,6 +1,7 @@
 #include "vk_jello.h"
 #include "jello.h"
 #include "input.h"
+#include <unordered_map>
 
 #if VULKAN_BUILD
 
@@ -1202,8 +1203,25 @@ void Vk_Jello::initJelloVertexIndexBuffers()
 {
     const glm::vec3 black = {0.0f, 0.0f, 0.0f};
     std::vector<Vertex> jelloVertices;
-    std::vector<uint16_t> jelloIndices;
+    std::vector<uint16_t> jelloIndices[4];
     int currentIndex = 0;
+
+    // isOnSurface(x, y, z) checks if the point at (x, y, z) is on the surface of the jello cube
+    auto isOnSurface = [](int x, int y, int z) {
+        return (x * y * z * (JELLO_SUBDIVISIONS - x) *
+                    (JELLO_SUBDIVISIONS - y) * (JELLO_SUBDIVISIONS - z) ==
+                0);
+        return (x == 0) || (x == JELLO_SUBDIVISIONS) ||
+               (y == 0) || (y == JELLO_SUBDIVISIONS) ||
+               (z == 0) || (z == JELLO_SUBDIVISIONS);
+        };
+
+    // calIndex(i, j, k) is used to map the 3D indices (i, j, k) to a unique integer index for the LUT
+    auto calIndex = [](int i, int j, int k) -> int {
+        return i * JELLO_SUBPOINTS * JELLO_SUBPOINTS + j * JELLO_SUBPOINTS + k;
+    };
+
+    std::unordered_map<int, int> LUT;
 
     for (int i = 0; i < JELLO_SUBPOINTS; i++)
     {
@@ -1211,28 +1229,89 @@ void Vk_Jello::initJelloVertexIndexBuffers()
         {
             for (int k = 0; k < JELLO_SUBPOINTS; k++)
             {
-                if (i * j * k * (JELLO_SUBDIVISIONS - i) *
-                        (JELLO_SUBDIVISIONS - j) * (JELLO_SUBDIVISIONS - k) ==
-                    0)
+                if (isOnSurface(i, j, k))
                 {
-                    Vertex vertex = {{jello.p[i][j][k].x, jello.p[i][j][k].y,
-                                      jello.p[i][j][k].z},
-                                     black};
+                    Vertex vertex =
+                    {
+                        {
+                            jello.p[i][j][k].x,
+                            jello.p[i][j][k].y,
+                            jello.p[i][j][k].z
+                        },
+                        black
+                    };
+
+                    // Vertices
                     jelloVertices.push_back(vertex);
-                    jelloIndices.push_back(currentIndex);
+
+                    // Points
+                    jelloIndices[0].push_back(currentIndex);
+
+                    // Add to LUT
+                    LUT[calIndex(i, j, k)] = currentIndex;
+
                     currentIndex++;
                 }
             }
         }
     }
 
+    auto addLine = [&](std::vector<uint16_t>& container, int i, int j, int k, int t, int u, int v)
+        {
+            if (isOnSurface(t, u, v))
+            {
+                container.push_back(LUT[calIndex(i, j, k)]);
+                container.push_back(LUT[calIndex(t, u, v)]);
+            }
+        };
+
+    // Structural lines
+    for (int i = 0; i < JELLO_SUBPOINTS; i++)
+    {
+        for (int j = 0; j < JELLO_SUBPOINTS; j++)
+        {
+            //for (int k = 0; k < JELLO_SUBPOINTS; k++)
+            {
+                int k = 3;
+                if (isOnSurface(i, j, k))
+                {
+                    addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
+                    addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
+                    addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
+                    addLine(jelloIndices[1], i+1, j  , k  , i, j, k);
+                    addLine(jelloIndices[1], i  , j+1, k  , i, j, k);
+                    addLine(jelloIndices[1], i  , j  , k+1, i, j, k);
+                }
+            }
+        }
+    }
+    //addLine(jelloIndices[1], 0, 0, 0, 1, 0, 0);
+    //addLine(jelloIndices[1], 0, 0, 0, 0, 1, 0);
+    //addLine(jelloIndices[1], 0, 0, 0, 0, 0, 1);
+    //addLine(jelloIndices[1], 1, 0, 0, 2, 0, 0);
+    //addLine(jelloIndices[1], 2, 0, 0, 3, 0, 0);
+    //addLine(jelloIndices[1], 3, 0, 0, 4, 0, 0);
+    //addLine(jelloIndices[1], 4, 0, 0, 5, 0, 0);
+    //addLine(jelloIndices[1], 5, 0, 0, 6, 0, 0);
+    //addLine(jelloIndices[1], 6, 0, 0, 7, 0, 0);
+
+    m_jelloIndexBufferInfos.points.startIndex     = 0;
+    m_jelloIndexBufferInfos.points.count          = jelloIndices[0].size();
+    m_jelloIndexBufferInfos.structural.startIndex = m_jelloIndexBufferInfos.points.startIndex + m_jelloIndexBufferInfos.points.count;
+    m_jelloIndexBufferInfos.structural.count      = jelloIndices[1].size();
+    m_jelloIndexBufferInfos.shear = {};
+    m_jelloIndexBufferInfos.bend = {};
+
     m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
     memcpy(m_jelloVertices.data(), jelloVertices.data(),
            jelloVertices.size() * sizeof(jelloVertices[0]));
 
-    m_jelloIndices.resize(jelloIndices.size() * sizeof(jelloIndices[0]));
-    memcpy(m_jelloIndices.data(), jelloIndices.data(),
-           jelloIndices.size() * sizeof(jelloIndices[0]));
+    m_jelloIndices.clear();
+    m_jelloIndices.reserve(m_jelloIndexBufferInfos.size() * sizeof(jelloIndices[0]));
+    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[0].begin(), jelloIndices[0].end());
+    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[1].begin(), jelloIndices[1].end());
+    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[2].begin(), jelloIndices[2].end());
+    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[3].begin(), jelloIndices[3].end());
 }
 
 void Vk_Jello::createJelloVertexBuffer()
@@ -1556,53 +1635,89 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                          VK_SUBPASS_CONTENTS_INLINE);
 
     // Draw bounding box lines
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      m_lineGraphicsPipeline);
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_lineGraphicsPipeline);
 
-    bindDynamicState(commandBuffer);
+        bindDynamicState(commandBuffer);
 
-    VkBuffer boundingBoxVertexBuffers[] = {m_boundingBoxVertexBuffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, boundingBoxVertexBuffers,
-                           offsets);
-    vkCmdBindIndexBuffer(commandBuffer, m_boundingBoxIndexBuffer, 0,
-                         VK_INDEX_TYPE_UINT16);
+        VkBuffer boundingBoxVertexBuffers[] = {m_boundingBoxVertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, boundingBoxVertexBuffers,
+                               offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_boundingBoxIndexBuffer, 0,
+                             VK_INDEX_TYPE_UINT16);
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout, 0, 1, &descriptorSets[currentFrame],
-                            0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout, 0, 1,
+                                &descriptorSets[currentFrame], 0, nullptr);
 
-    VkBufferMemoryBarrier hostWriteBarrier{};
-    hostWriteBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    hostWriteBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-    hostWriteBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-    hostWriteBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    hostWriteBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    hostWriteBarrier.buffer = m_jelloVertexBuffer;
-    hostWriteBarrier.offset = 0;
-    hostWriteBarrier.size = VK_WHOLE_SIZE;
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
-                         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
-                         &hostWriteBarrier, 0, nullptr);
+        VkBufferMemoryBarrier hostWriteBarrier{};
+        hostWriteBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        hostWriteBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+        hostWriteBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+        hostWriteBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        hostWriteBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        hostWriteBarrier.buffer = m_jelloVertexBuffer;
+        hostWriteBarrier.offset = 0;
+        hostWriteBarrier.size = VK_WHOLE_SIZE;
+        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+                             VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr,
+                             1, &hostWriteBarrier, 0, nullptr);
 
-    vkCmdDrawIndexed(commandBuffer,
-                     static_cast<uint32_t>(m_boundingBoxIndices.size()), 1, 0,
-                     0, 0);
+        vkCmdDrawIndexed(commandBuffer,
+                         static_cast<uint32_t>(m_boundingBoxIndices.size()), 1,
+                         0, 0, 0);
+    }
 
     // Draw Jello points
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      m_pointGraphicsPipeline);
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_pointGraphicsPipeline);
 
-    bindDynamicState(commandBuffer);
+        bindDynamicState(commandBuffer);
 
-    VkBuffer jelloVertexBuffers[] = {m_jelloVertexBuffer};
+        VkBuffer jelloVertexBuffers[] = {m_jelloVertexBuffer};
+        VkDeviceSize offsets[] = {0};
 
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer, 0,
-                         VK_INDEX_TYPE_UINT16);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers,
+                               offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer,
+                             m_jelloIndexBufferInfos.points.startIndex,
+                             VK_INDEX_TYPE_UINT16);
 
-    vkCmdDrawIndexed(commandBuffer,
-                     static_cast<uint32_t>(m_jelloIndices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(
+            commandBuffer,
+            static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count), 1, 0,
+            0, 0);
+    }
+
+    // Draw structural lines
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_lineGraphicsPipeline);
+
+        bindDynamicState(commandBuffer);
+
+        VkBuffer jelloVertexBuffers[] = {m_jelloVertexBuffer};
+        VkDeviceSize offsets[] = {0};
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers,
+                               offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer,
+                             m_jelloIndexBufferInfos.structural.startIndex *
+                                 sizeof(uint16_t),
+                             VK_INDEX_TYPE_UINT16);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout, 0, 1,
+                                &descriptorSets[currentFrame], 0, nullptr);
+
+        vkCmdDrawIndexed(
+            commandBuffer,
+            static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count) * 2, 1, 0,
+            0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 

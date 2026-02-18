@@ -161,6 +161,24 @@ private:
     std::vector<Vertex> m_jelloVertices;
     std::vector<uint16_t> m_jelloIndices;
 
+    struct IndexBufferInfo
+    {
+        size_t startIndex;
+        size_t count;
+    };
+
+    struct
+    {
+        IndexBufferInfo points;
+        IndexBufferInfo structural;
+        IndexBufferInfo shear;
+        IndexBufferInfo bend;
+        size_t size()
+        {
+            return points.count + structural.count + shear.count + bend.count;
+        }
+    } m_jelloIndexBufferInfos;
+    
     VkBuffer m_jelloVertexBuffer;
     VkDeviceMemory m_jelloVertexBufferMemory;
     VkBuffer m_jelloIndexBuffer;
