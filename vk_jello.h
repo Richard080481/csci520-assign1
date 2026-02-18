@@ -187,8 +187,8 @@ private:
     const glm::fvec4 k_boundingBoxColor = glm::fvec4(0.6f, 0.6f, 0.6f, 1.0f);
     const glm::fvec4 k_jelloPointColor = glm::fvec4(0.0f, 0.0f, 0.0f, 1.0f);
     const glm::fvec4 k_jelloStructuralLineColor = glm::fvec4(0.0f, 0.0f, 1.0f, 1.0f);
-    const glm::fvec4 k_jelloShearLineColor = glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f);
-    const glm::fvec4 k_jelloBendLineColor = glm::fvec4(0.0f, 1.0f, 0.0f, 1.0f);
+    const glm::fvec4 k_jelloShearLineColor = glm::fvec4(0.0f, 1.0f, 0.0f, 1.0f);
+    const glm::fvec4 k_jelloBendLineColor = glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     // Must match push_constant struct in shader.frag
     struct PipelinePushConstantFs

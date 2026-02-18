@@ -1399,16 +1399,16 @@ void Vk_Jello::initJelloVertexIndexBuffers()
 
     auto addLine = [&](std::vector<uint16_t>& container, int i, int j, int k, int t, int u, int v)
         {
-            if (isOnSurface(t, u, v))
+           if ((i >= 0 && i < JELLO_SUBPOINTS) &&
+               (j >= 0 && j < JELLO_SUBPOINTS) &&
+               (k >= 0 && k < JELLO_SUBPOINTS) &&
+               (t >= 0 && t < JELLO_SUBPOINTS) &&
+               (u >= 0 && u < JELLO_SUBPOINTS) &&
+               (v >= 0 && v < JELLO_SUBPOINTS) &&
+               isOnSurface(t, u, v) &&
+               LUT.find(calIndex(i, j, k)) != LUT.end() &&
+               LUT.find(calIndex(t, u, v)) != LUT.end())
             {
-                assert(i >= 0 && i < JELLO_SUBPOINTS);
-                assert(j >= 0 && j < JELLO_SUBPOINTS);
-                assert(k >= 0 && k < JELLO_SUBPOINTS);
-                assert(t >= 0 && t < JELLO_SUBPOINTS);
-                assert(u >= 0 && u < JELLO_SUBPOINTS);
-                assert(v >= 0 && v < JELLO_SUBPOINTS);
-                assert(LUT.find(calIndex(i, j, k)) != LUT.end());
-                assert(LUT.find(calIndex(t, u, v)) != LUT.end());
                 container.push_back(LUT[calIndex(i, j, k)]);
                 container.push_back(LUT[calIndex(t, u, v)]);
             }
@@ -1423,9 +1423,30 @@ void Vk_Jello::initJelloVertexIndexBuffers()
             {
                 if (isOnSurface(i, j, k))
                 {
-                    if (i+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
-                    if (j+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
-                    if (k+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
+                    addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
+                    addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
+                    addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
+                }
+            }
+        }
+    }
+
+    // Shear lines
+    for (int i = 0; i < JELLO_SUBPOINTS; i++)
+    {
+        for (int j = 0; j < JELLO_SUBPOINTS; j++)
+        {
+            for (int k = 0; k < JELLO_SUBPOINTS; k++)
+            {
+                if (isOnSurface(i, j, k))
+                {
+                    addLine(jelloIndices[2], i, j, k, i+1, j+1, k  );
+                    addLine(jelloIndices[2], i, j, k, i  , j+1, k+1);
+                    addLine(jelloIndices[2], i, j, k, i+1, j  , k+1);
+
+                    addLine(jelloIndices[2], i+1, j  , k  , i  , j+1, k  );
+                    addLine(jelloIndices[2], i  , j+1, k  , i  , j  , k+1);
+                    addLine(jelloIndices[2], i  , j  , k+1, i+1, j  , k  );
                 }
             }
         }
@@ -1435,7 +1456,8 @@ void Vk_Jello::initJelloVertexIndexBuffers()
     m_jelloIndexBufferInfos.points.count          = jelloIndices[0].size();
     m_jelloIndexBufferInfos.structural.startIndex = m_jelloIndexBufferInfos.points.startIndex + m_jelloIndexBufferInfos.points.count;
     m_jelloIndexBufferInfos.structural.count      = jelloIndices[1].size();
-    m_jelloIndexBufferInfos.shear = {};
+    m_jelloIndexBufferInfos.shear.startIndex      = m_jelloIndexBufferInfos.structural.startIndex + m_jelloIndexBufferInfos.structural.count;
+    m_jelloIndexBufferInfos.shear.count           = jelloIndices[2].size();
     m_jelloIndexBufferInfos.bend = {};
 
     m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
@@ -1854,8 +1876,26 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
             0); // firstInstance
     }
 
-    // Draw structural lines
+    // Draw structural and shear lines
+    for (auto& indexBufferInfo : {m_jelloIndexBufferInfos.shear, m_jelloIndexBufferInfos.structural})
     {
+        if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.structural.startIndex)
+        {
+            if (!structural) continue;
+            pipelinePushConstantFs.usePcColor = true;
+            pipelinePushConstantFs.color = k_jelloStructuralLineColor;
+        }
+        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.shear.startIndex)
+        {
+            if (!shear) continue;
+            pipelinePushConstantFs.usePcColor = true;
+            pipelinePushConstantFs.color = k_jelloShearLineColor;
+        }
+        else
+        {
+            pipelinePushConstantFs.usePcColor = false;
+        }
+
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                           m_lineGraphicsPipeline);
 
@@ -1867,7 +1907,7 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers,
                                offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer,
-                             m_jelloIndexBufferInfos.structural.startIndex *
+                             indexBufferInfo.startIndex *
                                  sizeof(uint16_t),
                              VK_INDEX_TYPE_UINT16);
 
@@ -1875,15 +1915,13 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                                 m_pipelineLayout, 0, 1,
                                 &descriptorSets[currentFrame], 0, nullptr);
 
-        pipelinePushConstantFs.usePcColor = true;
-        pipelinePushConstantFs.color = k_jelloStructuralLineColor;
         vkCmdPushConstants(
             commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
             sizeof(PipelinePushConstantFs), &pipelinePushConstantFs);
 
         vkCmdDrawIndexed(
             commandBuffer,
-            static_cast<uint32_t>(m_jelloIndexBufferInfos.structural.count),
+            static_cast<uint32_t>(indexBufferInfo.count),
             1,  // instanceCount
             0,  // firstIndex
             0,  // vertexOffset
