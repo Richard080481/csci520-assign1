@@ -33,6 +33,7 @@ void saveScreenshot(int windowWidth, int windowHeight, char* filename)
 
     pic_free(in);
 }
+#endif // #if !VULKAN_BUILD
 
 /* converts mouse drags into information about rotation/translation/scaling */
 void mouseMotionDrag(int x, int y)
@@ -66,7 +67,6 @@ void mouseMotion(int x, int y)
     g_vMousePos[0] = x;
     g_vMousePos[1] = y;
 }
-#endif // #if !VULKAN_BUILD
 
 #if USE_GLUT
 void mouseButton(int button, int state, int x, int y)

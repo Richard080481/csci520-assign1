@@ -75,6 +75,25 @@ void Vk_Jello::Vk_Jello::initWindow()
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
     glfwSetKeyCallback(window, keyboardFunc);
+
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
+        double xpos, ypos;
+        glfwGetCursorPos(w, &xpos, &ypos);
+        mouseButton(button, action, (int)xpos, (int)ypos);
+        //printf("button: %d, state: %d\n", button, action);
+    });
+
+    glfwSetCursorPosCallback(window, [](GLFWwindow* w, double xpos, double ypos) {
+        if ((glfwGetMouseButton(w, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) ||
+            (glfwGetMouseButton(w, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS))
+        {
+            mouseMotionDrag((int)xpos, (int)ypos);
+        }
+        else
+        {
+            mouseMotion((int)xpos, (int)ypos);
+        }
+    });
 }
 
 void Vk_Jello::Vk_Jello::initVulkan()
@@ -131,9 +150,6 @@ void Vk_Jello::mainLoop()
 
 void Vk_Jello::updateUniformBuffer(uint32_t currentImage)
 {
-    double Theta = VK_PI / 6.0;
-    double Phi = VK_PI / 6.0;
-    double R = 6.0;
     UniformBufferObject ubo{};
     ubo.model = glm::mat4(1.0f);
 
