@@ -201,6 +201,7 @@ private:
         auto app =
             reinterpret_cast<Vk_Jello*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
+        app->drawFrame();
     }
 
     void initVulkan();
