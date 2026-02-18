@@ -8,6 +8,7 @@
 
 */
 
+#include <assert.h>
 #include "jello.h"
 #include "input.h"
 #include "physics.h"
@@ -261,6 +262,7 @@ int main(int argc, char** argv)
     {
         printf("Oops! You didn't say the jello world file!\n");
         printf("Usage: %s [worldfile]\n", argv[0]);
+        assert(0 && "Oops! You didn't say the jello world file!");
         exit(0);
     }
 
