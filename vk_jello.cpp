@@ -159,6 +159,7 @@ void Vk_Jello::updateUniformBuffer(uint32_t currentImage)
 
 void Vk_Jello::physicsCompute()
 {
+    Sleep(10);
     if (strcmp(jello.integrator, "Euler") == 0)
     {
         Euler(&jello);
@@ -1223,17 +1224,14 @@ void Vk_Jello::initJelloVertexIndexBuffers()
     int currentIndex = 0;
 
     // isOnSurface(x, y, z) checks if the point at (x, y, z) is on the surface of the jello cube
-    auto isOnSurface = [](int x, int y, int z) {
-        return (x * y * z * (JELLO_SUBDIVISIONS - x) *
-                    (JELLO_SUBDIVISIONS - y) * (JELLO_SUBDIVISIONS - z) ==
-                0);
-        return (x == 0) || (x == JELLO_SUBDIVISIONS) ||
-               (y == 0) || (y == JELLO_SUBDIVISIONS) ||
-               (z == 0) || (z == JELLO_SUBDIVISIONS);
-        };
+    auto isOnSurface = [](int x, int y, int z) -> bool
+    {
+        return (x * y * z * (JELLO_SUBDIVISIONS - x) * (JELLO_SUBDIVISIONS - y) * (JELLO_SUBDIVISIONS - z) == 0);
+    };
 
     // calIndex(i, j, k) is used to map the 3D indices (i, j, k) to a unique integer index for the LUT
-    auto calIndex = [](int i, int j, int k) -> int {
+    auto calIndex = [](int i, int j, int k) -> int
+    {
         return i * JELLO_SUBPOINTS * JELLO_SUBPOINTS + j * JELLO_SUBPOINTS + k;
     };
 
@@ -1276,6 +1274,14 @@ void Vk_Jello::initJelloVertexIndexBuffers()
         {
             if (isOnSurface(t, u, v))
             {
+                assert(i >= 0 && i < JELLO_SUBPOINTS);
+                assert(j >= 0 && j < JELLO_SUBPOINTS);
+                assert(k >= 0 && k < JELLO_SUBPOINTS);
+                assert(t >= 0 && t < JELLO_SUBPOINTS);
+                assert(u >= 0 && u < JELLO_SUBPOINTS);
+                assert(v >= 0 && v < JELLO_SUBPOINTS);
+                assert(LUT.find(calIndex(i, j, k)) != LUT.end());
+                assert(LUT.find(calIndex(t, u, v)) != LUT.end());
                 container.push_back(LUT[calIndex(i, j, k)]);
                 container.push_back(LUT[calIndex(t, u, v)]);
             }
@@ -1286,30 +1292,17 @@ void Vk_Jello::initJelloVertexIndexBuffers()
     {
         for (int j = 0; j < JELLO_SUBPOINTS; j++)
         {
-            //for (int k = 0; k < JELLO_SUBPOINTS; k++)
+            for (int k = 0; k < JELLO_SUBPOINTS; k++)
             {
-                int k = 3;
                 if (isOnSurface(i, j, k))
                 {
-                    addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
-                    addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
-                    addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
-                    addLine(jelloIndices[1], i+1, j  , k  , i, j, k);
-                    addLine(jelloIndices[1], i  , j+1, k  , i, j, k);
-                    addLine(jelloIndices[1], i  , j  , k+1, i, j, k);
+                    if (i+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
+                    if (j+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
+                    if (k+1 < JELLO_SUBPOINTS) addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
                 }
             }
         }
     }
-    //addLine(jelloIndices[1], 0, 0, 0, 1, 0, 0);
-    //addLine(jelloIndices[1], 0, 0, 0, 0, 1, 0);
-    //addLine(jelloIndices[1], 0, 0, 0, 0, 0, 1);
-    //addLine(jelloIndices[1], 1, 0, 0, 2, 0, 0);
-    //addLine(jelloIndices[1], 2, 0, 0, 3, 0, 0);
-    //addLine(jelloIndices[1], 3, 0, 0, 4, 0, 0);
-    //addLine(jelloIndices[1], 4, 0, 0, 5, 0, 0);
-    //addLine(jelloIndices[1], 5, 0, 0, 6, 0, 0);
-    //addLine(jelloIndices[1], 6, 0, 0, 7, 0, 0);
 
     m_jelloIndexBufferInfos.points.startIndex     = 0;
     m_jelloIndexBufferInfos.points.count          = jelloIndices[0].size();
@@ -1682,8 +1675,11 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                                 &descriptorSets[currentFrame], 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffer,
-                         static_cast<uint32_t>(m_boundingBoxIndices.size()), 1,
-                         0, 0, 0);
+                         static_cast<uint32_t>(m_boundingBoxIndices.size()),
+                         1,  // instanceCount
+                         0,  // firstIndex
+                         0,  // vertexOffset
+                         0); // firstInstance
     }
 
     // Draw Jello points
@@ -1699,13 +1695,17 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers,
                                offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer,
-                             m_jelloIndexBufferInfos.points.startIndex,
+                             m_jelloIndexBufferInfos.points.startIndex *
+                                 sizeof(uint16_t),
                              VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(
             commandBuffer,
-            static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count), 1, 0,
-            0, 0);
+            static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count),
+            1,  // instanceCount
+            0,  // firstIndex
+            0,  // vertexOffset
+            0); // firstInstance
     }
 
     // Draw structural lines
@@ -1731,8 +1731,11 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
 
         vkCmdDrawIndexed(
             commandBuffer,
-            static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count) * 2, 1, 0,
-            0, 0);
+            static_cast<uint32_t>(m_jelloIndexBufferInfos.structural.count),
+            1,  // instanceCount
+            0,  // firstIndex
+            0,  // vertexOffset
+            0); // firstInstance
     }
 
     vkCmdEndRenderPass(commandBuffer);
@@ -1962,6 +1965,7 @@ int main(int argc, char** argv)
     {
         printf("Oops! You didn't say the jello world file!\n");
         printf("Usage: %s [worldfile]\n", argv[0]);
+        assert(false);
         exit(0);
     }
 
