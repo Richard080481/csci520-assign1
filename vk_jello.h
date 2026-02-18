@@ -129,7 +129,12 @@ private:
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
 
-    VkRenderPass renderPass;
+    std::vector<VkImage> depthBufferImages;
+    std::vector<VkDeviceMemory> depthBufferMemories;
+    std::vector<VkImageView> depthBufferImageViews;
+    const VkFormat depthBufferFormat = VkFormat::VK_FORMAT_D32_SFLOAT;
+
+    VkRenderPass m_renderPass;
     VkDescriptorSetLayout m_descriptorSetLayout;
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_lineGraphicsPipeline;
@@ -203,7 +208,7 @@ private:
 
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
-    
+
     void initWindow();
 
     static void framebufferResizeCallback(
@@ -224,6 +229,7 @@ private:
     void particlePosUpdate();
     void drawFrame();
     void cleanupSwapChain();
+    void destroyDepthBuffers();
     void cleanup();
     void createInstance();
     void populateDebugMessengerCreateInfo(
@@ -233,6 +239,7 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapChain();
+    void createDepthBuffers();
     void createImageViews();
     void recreateSwapChain();
     VkShaderModule createShaderModule(const std::vector<char>& code);
