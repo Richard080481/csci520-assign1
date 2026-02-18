@@ -1647,6 +1647,19 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
+    VkBufferMemoryBarrier hostWriteBarrier{};
+    hostWriteBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    hostWriteBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    hostWriteBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    hostWriteBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    hostWriteBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    hostWriteBarrier.buffer = m_jelloVertexBuffer;
+    hostWriteBarrier.offset = 0;
+    hostWriteBarrier.size = VK_WHOLE_SIZE;
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+                         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr,
+                         1, &hostWriteBarrier, 0, nullptr);
+
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1667,19 +1680,6 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout, 0, 1,
                                 &descriptorSets[currentFrame], 0, nullptr);
-
-        VkBufferMemoryBarrier hostWriteBarrier{};
-        hostWriteBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        hostWriteBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-        hostWriteBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-        hostWriteBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        hostWriteBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        hostWriteBarrier.buffer = m_jelloVertexBuffer;
-        hostWriteBarrier.offset = 0;
-        hostWriteBarrier.size = VK_WHOLE_SIZE;
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
-                             VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr,
-                             1, &hostWriteBarrier, 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffer,
                          static_cast<uint32_t>(m_boundingBoxIndices.size()), 1,
