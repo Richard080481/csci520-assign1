@@ -94,6 +94,7 @@ void Vk_Jello::Vk_Jello::initVulkan()
     createImageViews();
     createRenderPass();
     createDescriptorSetLayout();
+    createPipelineLayout();
     createPointGraphicsPipeline();
     createLineGraphicsPipeline();
     createFramebuffers();
@@ -292,7 +293,7 @@ void Vk_Jello::cleanup()
 
     vkDestroyPipeline(device, m_lineGraphicsPipeline, nullptr);
     vkDestroyPipeline(device, m_pointGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -303,7 +304,7 @@ void Vk_Jello::cleanup()
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
-    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(device, m_descriptorSetLayout, nullptr);
 
     vkDestroyBuffer(device, m_boundingBoxVertexBuffer, nullptr);
     vkFreeMemory(device, m_boundingBoxVertexBufferMemory, nullptr);
@@ -685,9 +686,30 @@ void Vk_Jello::createDescriptorSetLayout()
     layoutInfo.pBindings = &uboLayoutBinding;
 
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr,
-                                    &descriptorSetLayout) != VK_SUCCESS)
+                                    &m_descriptorSetLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void Vk_Jello::createPipelineLayout()
+{
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+
+    VkPushConstantRange pushConstantRanges[1] = {};
+    pushConstantRanges[0].size = sizeof(pipelinePushConstantFs);
+    pushConstantRanges[0].offset = 0;
+    pushConstantRanges[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pipelineLayoutInfo.pushConstantRangeCount = ARRAYSIZE(pushConstantRanges);
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges;
+
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
+                                &m_pipelineLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create pipeline layout!");
     }
 }
 
@@ -783,17 +805,6 @@ void Vk_Jello::createPointGraphicsPipeline()
         static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
-                               &pipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -805,7 +816,7 @@ void Vk_Jello::createPointGraphicsPipeline()
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = m_pipelineLayout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -913,17 +924,6 @@ void Vk_Jello::createLineGraphicsPipeline()
         static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
-                               &pipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -935,7 +935,7 @@ void Vk_Jello::createLineGraphicsPipeline()
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = m_pipelineLayout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -993,7 +993,12 @@ void Vk_Jello::createCommandPool()
 
 void Vk_Jello::initBoundingBoxVertexIndexBuffers()
 {
-    const glm::vec3 grey = {0.6f, 0.6f, 0.6f};
+    const glm::vec3 grey =
+    {
+        k_boundingBoxColor.r,
+        k_boundingBoxColor.g,
+        k_boundingBoxColor.b
+    };
 
     std::vector<Vertex> boundingBoxVertices = {
         // Unique vertices only
@@ -1521,7 +1526,7 @@ void Vk_Jello::createDescriptorPool()
 void Vk_Jello::createDescriptorSets()
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
-                                               descriptorSetLayout);
+                                               m_descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptorPool;
@@ -1671,8 +1676,14 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                              VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout, 0, 1,
+                                m_pipelineLayout, 0, 1,
                                 &descriptorSets[currentFrame], 0, nullptr);
+
+        pipelinePushConstantFs.usePcColor = true;
+        pipelinePushConstantFs.color = k_boundingBoxColor;
+        vkCmdPushConstants(
+            commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+            sizeof(PipelinePushConstantFs), &pipelinePushConstantFs);
 
         vkCmdDrawIndexed(commandBuffer,
                          static_cast<uint32_t>(m_boundingBoxIndices.size()),
@@ -1698,6 +1709,16 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                              m_jelloIndexBufferInfos.points.startIndex *
                                  sizeof(uint16_t),
                              VK_INDEX_TYPE_UINT16);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_pipelineLayout, 0, 1,
+                                &descriptorSets[currentFrame], 0, nullptr);
+
+        pipelinePushConstantFs.usePcColor = true;
+        pipelinePushConstantFs.color = k_jelloPointColor;
+        vkCmdPushConstants(
+            commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+            sizeof(PipelinePushConstantFs), &pipelinePushConstantFs);
 
         vkCmdDrawIndexed(
             commandBuffer,
@@ -1726,8 +1747,14 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
                              VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout, 0, 1,
+                                m_pipelineLayout, 0, 1,
                                 &descriptorSets[currentFrame], 0, nullptr);
+
+        pipelinePushConstantFs.usePcColor = true;
+        pipelinePushConstantFs.color = k_jelloStructuralLineColor;
+        vkCmdPushConstants(
+            commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+            sizeof(PipelinePushConstantFs), &pipelinePushConstantFs);
 
         vkCmdDrawIndexed(
             commandBuffer,

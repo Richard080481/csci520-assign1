@@ -130,8 +130,8 @@ private:
     std::vector<VkImageView> swapChainImageViews;
 
     VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
+    VkDescriptorSetLayout m_descriptorSetLayout;
+    VkPipelineLayout m_pipelineLayout;
     VkPipeline m_lineGraphicsPipeline;
     VkPipeline m_pointGraphicsPipeline;
 
@@ -178,7 +178,20 @@ private:
             return points.count + structural.count + shear.count + bend.count;
         }
     } m_jelloIndexBufferInfos;
-    
+
+    const glm::fvec4 k_boundingBoxColor = glm::fvec4(0.6f, 0.6f, 0.6f, 1.0f);
+    const glm::fvec4 k_jelloPointColor = glm::fvec4(0.0f, 0.0f, 0.0f, 1.0f);
+    const glm::fvec4 k_jelloStructuralLineColor = glm::fvec4(0.0f, 0.0f, 1.0f, 1.0f);
+    const glm::fvec4 k_jelloShearLineColor = glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f);
+    const glm::fvec4 k_jelloBendLineColor = glm::fvec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+    // Must match push_constant struct in shader.frag
+    struct PipelinePushConstantFs
+    {
+        glm::fvec4 color;
+        bool       usePcColor;
+    } pipelinePushConstantFs;
+
     VkBuffer m_jelloVertexBuffer;
     VkDeviceMemory m_jelloVertexBufferMemory;
     VkBuffer m_jelloIndexBuffer;
@@ -225,6 +238,7 @@ private:
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createRenderPass();
     void createDescriptorSetLayout();
+    void createPipelineLayout();
     void createPointGraphicsPipeline();
     void createLineGraphicsPipeline();
     void createFramebuffers();
