@@ -1452,13 +1452,31 @@ void Vk_Jello::initJelloVertexIndexBuffers()
         }
     }
 
+    // Bend lines
+    for (int i = 0; i < JELLO_SUBPOINTS; i++)
+    {
+        for (int j = 0; j < JELLO_SUBPOINTS; j++)
+        {
+            for (int k = 0; k < JELLO_SUBPOINTS; k++)
+            {
+                if (isOnSurface(i, j, k))
+                {
+                    addLine(jelloIndices[3], i, j, k, i+2, j  , k  );
+                    addLine(jelloIndices[3], i, j, k, i  , j+2, k  );
+                    addLine(jelloIndices[3], i, j, k, i  , j  , k+2);
+                }
+            }
+        }
+    }
+
     m_jelloIndexBufferInfos.points.startIndex     = 0;
     m_jelloIndexBufferInfos.points.count          = jelloIndices[0].size();
     m_jelloIndexBufferInfos.structural.startIndex = m_jelloIndexBufferInfos.points.startIndex + m_jelloIndexBufferInfos.points.count;
     m_jelloIndexBufferInfos.structural.count      = jelloIndices[1].size();
     m_jelloIndexBufferInfos.shear.startIndex      = m_jelloIndexBufferInfos.structural.startIndex + m_jelloIndexBufferInfos.structural.count;
     m_jelloIndexBufferInfos.shear.count           = jelloIndices[2].size();
-    m_jelloIndexBufferInfos.bend = {};
+    m_jelloIndexBufferInfos.bend.startIndex       = m_jelloIndexBufferInfos.shear.startIndex + m_jelloIndexBufferInfos.shear.count;
+    m_jelloIndexBufferInfos.bend.count            = jelloIndices[3].size();
 
     m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
     memcpy(m_jelloVertices.data(), jelloVertices.data(),
@@ -1877,7 +1895,12 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
     }
 
     // Draw structural and shear lines
-    for (auto& indexBufferInfo : {m_jelloIndexBufferInfos.shear, m_jelloIndexBufferInfos.structural})
+    for (auto& indexBufferInfo :
+            {
+                m_jelloIndexBufferInfos.structural,
+                m_jelloIndexBufferInfos.shear,
+                m_jelloIndexBufferInfos.bend
+            })
     {
         if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.structural.startIndex)
         {
@@ -1890,6 +1913,12 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
             if (!shear) continue;
             pipelinePushConstantFs.usePcColor = true;
             pipelinePushConstantFs.color = k_jelloShearLineColor;
+        }
+        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.bend.startIndex)
+        {
+            if (!bend) continue;
+            pipelinePushConstantFs.usePcColor = true;
+            pipelinePushConstantFs.color = k_jelloBendLineColor;
         }
         else
         {
