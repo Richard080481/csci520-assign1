@@ -59,6 +59,8 @@ void mouseMotionDrag(int x, int y)
 
         g_vMousePos[0] = x;
         g_vMousePos[1] = y;
+
+        step = 1;
     }
 }
 

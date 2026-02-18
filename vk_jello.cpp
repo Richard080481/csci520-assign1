@@ -137,12 +137,8 @@ void Vk_Jello::mainLoop()
             particlePosUpdate();
         }
         drawFrame();
-        step = std::max(0, step - 1);
 
-        if (pause)
-        {
-            Sleep(100);
-        }
+        step = std::max(0, step - 1);
     }
 
     vkDeviceWaitIdle(device);
