@@ -15,8 +15,8 @@
 #include "showCube.h"
 
 // camera parameters
-double Theta = pi / 6;
-double Phi = pi / 6;
+double Theta = PI / 6;
+double Phi = PI / 6;
 double R = 6;
 
 // mouse control

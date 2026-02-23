@@ -7,7 +7,7 @@
 
 #ifndef _INPUT_H_
 #define _INPUT_H_
-#include "jello.h"
+#include "types.h"
 
 /* Write a screenshot to the specified filename, in PPM format */
 void saveScreenshot(int windowWidth, int windowHeight, char* filename);

@@ -1,8 +1,28 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+// Use glut on 32-bit Windows, and use GLFW on 64-bit Windows and all other platforms. This is because the 64-bit version of glut is old and does not support modern OpenGL features, which causes compilation errors on 64-bit Windows. On 32-bit Windows, we
+// can use the newer version of glut without issues. However, for Vulkan build, we should use GLFW.
+#if _M_X64
+#define VULKAN_BUILD 1
+#else // #if _M_X64
+#define VULKAN_BUILD 0
+#endif // #if _M_X64
+
+#if VULKAN_BUILD
+#define USE_GLUT 0
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include "Windows.h"
+#else // #if VULKAN_BUILD
+#define USE_GLUT 1
+#include "openGL-headers.h"
+#endif // #if VULKAN_BUILD
+
 #define JELLO_SUBPOINTS 8
 #define JELLO_SUBDIVISIONS (JELLO_SUBPOINTS - 1)
+
+#define PI 3.141592653589793238462643383279
 
 // camera angles
 extern double Theta;
