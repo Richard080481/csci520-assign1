@@ -9,8 +9,10 @@
 #define _INPUT_H_
 #include "types.h"
 
-/* Write a screenshot to the specified filename, in PPM format */
-void saveScreenshot(int windowWidth, int windowHeight, char* filename);
+// camera parameters
+extern double g_ftheta;
+extern double g_fphi;
+extern double g_fradius;
 
 // mouse & keyboard control
 void mouseMotionDrag(int x, int y);

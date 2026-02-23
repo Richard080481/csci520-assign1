@@ -78,7 +78,7 @@ void showCube(struct world* jello)
         glVertex3f(jello->p[ip][jp][kp].x, jello->p[ip][jp][kp].y, jello->p[ip][jp][kp].z);        \
     }
 
-    if (viewingMode == 0) // render wireframe
+    if (g_iviewingMode == 0) // render wireframe
     {
         glLineWidth(1);
         glPointSize(5);
@@ -104,7 +104,7 @@ void showCube(struct world* jello)
 
                     glBegin(GL_LINES);
                     // structural
-                    if (structural == 1)
+                    if (g_istructural == 1)
                     {
                         glColor4f(0, 0, 1, 1);
                         PROCESS_NEIGHBOUR(1, 0, 0);
@@ -116,7 +116,7 @@ void showCube(struct world* jello)
                     }
 
                     // shear
-                    if (shear == 1)
+                    if (g_ishear == 1)
                     {
                         glColor4f(0, 1, 0, 1);
                         PROCESS_NEIGHBOUR(1, 1, 0);
@@ -143,7 +143,7 @@ void showCube(struct world* jello)
                     }
 
                     // bend
-                    if (bend == 1)
+                    if (g_ibend == 1)
                     {
                         glColor4f(1, 0, 0, 1);
                         PROCESS_NEIGHBOUR(2, 0, 0);

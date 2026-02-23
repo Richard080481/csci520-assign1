@@ -14,35 +14,12 @@
 #include <math.h>
 
 #include "input.h"
+#include "jello.h"
 #include "physics.h"
+#include "pic.h"
 #include "showCube.h"
 
-// camera parameters
-double Theta = PI / 6;
-double Phi = PI / 6;
-double R = 6;
-
-// mouse control
-int g_iMenuId;
-int g_vMousePos[2];
-int g_iLeftMouseButton, g_iMiddleMouseButton, g_iRightMouseButton;
-
-// number of images saved to disk so far
-int sprite = 0;
-double timeCounter = 0.0;
-
-// these variables control what is displayed on screen
-int shear = 0, bend = 0, structural = 1, pause = 0, viewingMode = 0, saveScreenToFile = 0;
-
-// render number of frames and stop
-int step = 0;
-
-// do physics
-int physics = 1;
-
-struct world jello;
-
-int windowWidth, windowHeight;
+static int g_iwindowWidth, g_iwindowHeight;
 
 #if !VULKAN_BUILD
 void myinit()
@@ -84,8 +61,8 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    windowWidth = w;
-    windowHeight = h;
+    g_iwindowWidth = w;
+    g_iwindowHeight = h;
 
 #if USE_GLUT
     glutPostRedisplay();
@@ -101,7 +78,7 @@ void display()
     glLoadIdentity();
 
     // camera parameters are Phi, Theta, R
-    gluLookAt(R * cos(Phi) * cos(Theta), R * sin(Phi) * cos(Theta), R * sin(Theta), 0.0, 0.0, 0.0,
+    gluLookAt(g_fradius * cos(g_fphi) * cos(g_ftheta), g_fradius * sin(g_fphi) * cos(g_ftheta), g_fradius * sin(g_ftheta), 0.0, 0.0, 0.0,
               0.0, 0.0, 1.0);
 
     /* Lighting */
@@ -210,8 +187,35 @@ void display()
 #endif
 }
 
+/* Write a screenshot to the specified filename, in PPM format */
+void saveScreenshot(int windowWidth, int windowHeight, char* filename)
+{
+    if (filename == NULL)
+        return;
+
+    // Allocate a picture buffer
+    Pic* in = pic_alloc(windowWidth, windowHeight, 3, NULL);
+
+    printf("File to save to: %s\n", filename);
+
+    for (int i = windowHeight - 1; i >= 0; i--)
+    {
+        glReadPixels(0, windowHeight - i - 1, windowWidth, 1, GL_RGB, GL_UNSIGNED_BYTE, &in->pix[i * in->nx * in->bpp]);
+    }
+
+    if (ppm_write(filename, in))
+        printf("File saved Successfully\n");
+    else
+        printf("Error in Saving\n");
+
+    pic_free(in);
+}
+
 void doIdle()
 {
+    static int sprite = 0; // number of images saved to disk so far
+    static double timeCounter = 0.0;
+
     char s[20] = "picxxxx.ppm";
     int i;
 
@@ -221,11 +225,11 @@ void doIdle()
     s[5] = 48 + (sprite % 100) / 10;
     s[6] = 48 + sprite % 10;
 
-    if (saveScreenToFile == 1)
+    if (g_isaveScreenToFile == 1)
     {
         if (timeCounter >= (1.0 / 15))
         {
-            saveScreenshot(windowWidth, windowHeight, s);
+            saveScreenshot(g_iwindowWidth, g_iwindowHeight, s);
             timeCounter -= (1.0 / 15);
             sprite++;
         }
@@ -239,7 +243,7 @@ void doIdle()
         exit(0);
     }
 
-    if (pause == 0)
+    if (g_ipause == 0)
     {
         // perform one time step of the simulation
         if (strcmp(jello.integrator, "Euler") == 0)
@@ -271,15 +275,15 @@ int main(int argc, char** argv)
 
     readWorld(argv[1], &jello);
 
-    windowWidth = 640;
-    windowHeight = 480;
+    g_iwindowWidth = 640;
+    g_iwindowHeight = 480;
 
     glutInit(&argc, argv);
 
     /* double buffered window, use depth testing, 640x480 */
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
-    glutInitWindowSize(windowWidth, windowHeight);
+    glutInitWindowSize(g_iwindowWidth, g_iwindowHeight);
     glutInitWindowPosition(0, 0);
     glutCreateWindow("Jello cube");
 

@@ -9,33 +9,27 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if !VULKAN_BUILD
-#include "pic.h"
-/* Write a screenshot, in the PPM format, to the specified filename, in PPM format */
-void saveScreenshot(int windowWidth, int windowHeight, char* filename)
-{
-    if (filename == NULL)
-        return;
+// camera parameters
+double g_ftheta = PI / 6;
+double g_fphi = PI / 6;
+double g_fradius = 6;
 
-    // Allocate a picture buffer
-    Pic* in = pic_alloc(windowWidth, windowHeight, 3, NULL);
+// mouse control
+static int g_vMousePos[2];
+static int g_iLeftMouseButton;
+static int g_iMiddleMouseButton;
+static int g_iRightMouseButton;
 
-    printf("File to save to: %s\n", filename);
+// these variables control what is displayed on screen
+int g_ishear = 0;
+int g_ibend = 0;
+int g_istructural = 1;
+int g_ipause = 0;
+int g_iviewingMode = 0;
+int g_isaveScreenToFile = 0;
 
-    for (int i = windowHeight - 1; i >= 0; i--)
-    {
-        glReadPixels(0, windowHeight - i - 1, windowWidth, 1, GL_RGB, GL_UNSIGNED_BYTE,
-                     &in->pix[i * in->nx * in->bpp]);
-    }
-
-    if (ppm_write(filename, in))
-        printf("File saved Successfully\n");
-    else
-        printf("Error in Saving\n");
-
-    pic_free(in);
-}
-#endif // #if !VULKAN_BUILD
+int g_istep = 0;
+int g_iphysics = 1;
 
 /* converts mouse drags into information about rotation/translation/scaling */
 void mouseMotionDrag(int x, int y)
@@ -44,25 +38,25 @@ void mouseMotionDrag(int x, int y)
 
     if (g_iRightMouseButton) // handle camera rotations
     {
-        Phi += vMouseDelta[0] * 0.01;
-        Theta += vMouseDelta[1] * 0.01;
+        g_fphi += vMouseDelta[0] * 0.01;
+        g_ftheta += vMouseDelta[1] * 0.01;
 
-        if (Phi > 2 * PI)
-            Phi -= 2 * PI;
+        if (g_fphi > 2 * PI)
+            g_fphi -= 2 * PI;
 
-        if (Phi < 0)
-            Phi += 2 * PI;
+        if (g_fphi < 0)
+            g_fphi += 2 * PI;
 
-        if (Theta > PI / 2 - 0.01) // dont let the point enter the north pole
-            Theta = PI / 2 - 0.01;
+        if (g_ftheta > PI / 2 - 0.01) // dont let the point enter the north pole
+            g_ftheta = PI / 2 - 0.01;
 
-        if (Theta < -PI / 2 + 0.01)
-            Theta = -PI / 2 + 0.01;
+        if (g_ftheta < -PI / 2 + 0.01)
+            g_ftheta = -PI / 2 + 0.01;
 
         g_vMousePos[0] = x;
         g_vMousePos[1] = y;
 
-        step = 1;
+        g_istep = 1;
     }
 }
 
@@ -102,43 +96,43 @@ void keyboardFunc(unsigned char key, int x, int y)
         break;
 
     case 'e':
-        Theta = PI / 6;
-        Phi = PI / 6;
-        viewingMode = 0;
+        g_ftheta = PI / 6;
+        g_fphi = PI / 6;
+        g_iviewingMode = 0;
         break;
 
     case 'v':
-        viewingMode = 1 - viewingMode;
+        g_iviewingMode = 1 - g_iviewingMode;
         break;
 
     case 'h':
-        shear = 1 - shear;
+        g_ishear = 1 - g_ishear;
         break;
 
     case 's':
-        structural = 1 - structural;
+        g_istructural = 1 - g_istructural;
         break;
 
     case 'b':
-        bend = 1 - bend;
+        g_ibend = 1 - g_ibend;
         break;
 
     case 'p':
-        pause = 1 - pause;
+        g_ipause = 1 - g_ipause;
         break;
 
     case 'z':
-        R -= 0.2;
-        if (R < 0.2)
-            R = 0.2;
+        g_fradius -= 0.2;
+        if (g_fradius < 0.2)
+            g_fradius = 0.2;
         break;
 
     case 'x':
-        R += 0.2;
+        g_fradius += 0.2;
         break;
 
     case ' ':
-        saveScreenToFile = 1 - saveScreenToFile;
+        g_isaveScreenToFile = 1 - g_isaveScreenToFile;
         break;
     }
 }
@@ -177,55 +171,55 @@ void keyboardFunc(GLFWwindow* window, int key, int scancode, int action, int mod
             break;
 
         case GLFW_KEY_E:
-            Theta = PI / 6;
-            Phi = PI / 6;
-            viewingMode = 0;
+            g_ftheta = PI / 6;
+            g_fphi = PI / 6;
+            g_iviewingMode = 0;
             break;
 
         case GLFW_KEY_V:
-            viewingMode = 1 - viewingMode;
+            g_iviewingMode = 1 - g_iviewingMode;
             break;
 
         case GLFW_KEY_H:
-            shear = 1 - shear;
-            step = 1;
+            g_ishear = 1 - g_ishear;
+            g_istep = 1;
             break;
 
         case GLFW_KEY_S:
-            structural = 1 - structural;
-            step = 1;
+            g_istructural = 1 - g_istructural;
+            g_istep = 1;
             break;
 
         case GLFW_KEY_B:
-            bend = 1 - bend;
-            step = 1;
+            g_ibend = 1 - g_ibend;
+            g_istep = 1;
             break;
 
         case GLFW_KEY_P:
-            pause = 1 - pause;
-            physics = 1 - pause;
+            g_ipause = 1 - g_ipause;
+            g_iphysics = 1 - g_ipause;
             break;
 
         case GLFW_KEY_N:
-            if (pause)
+            if (g_ipause)
             {
-                step = 1;
-                physics = 1;
+                g_istep = 1;
+                g_iphysics = 1;
             }
             break;
 
         case GLFW_KEY_Z:
-            R -= 0.2;
-            if (R < 0.2)
-                R = 0.2;
+            g_fradius -= 0.2;
+            if (g_fradius < 0.2)
+                g_fradius = 0.2;
             break;
 
         case GLFW_KEY_X:
-            R += 0.2;
+            g_fradius += 0.2;
             break;
 
         case GLFW_KEY_SPACE:
-            saveScreenToFile = 1 - saveScreenToFile;
+            g_isaveScreenToFile = 1 - g_isaveScreenToFile;
             break;
         }
     }

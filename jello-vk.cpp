@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "input.h"
+#include "jello.h"
 #include "physics.h"
 
 #if VULKAN_BUILD
@@ -135,14 +136,14 @@ void Vk_Jello::mainLoop()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        if (physics && (step || !pause))
+        if (g_iphysics && (g_istep || !g_ipause))
         {
             physicsCompute();
             particlePosUpdate();
         }
         drawFrame();
 
-        step = std::max(0, step - 1);
+        g_istep = std::max(0, g_istep - 1);
     }
 
     vkDeviceWaitIdle(device);
@@ -153,8 +154,8 @@ void Vk_Jello::updateUniformBuffer(uint32_t currentImage)
     UniformBufferObject ubo{};
     ubo.model = glm::mat4(1.0f);
 
-    glm::vec3 eye = glm::vec3(R * cos(Phi) * cos(Theta),
-                              R * sin(Phi) * cos(Theta), R * sin(Theta));
+    glm::vec3 eye = glm::vec3(g_fradius * cos(g_fphi) * cos(g_ftheta),
+                              g_fradius * sin(g_fphi) * cos(g_ftheta), g_fradius * sin(g_ftheta));
 
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -198,7 +199,7 @@ void Vk_Jello::drawFrame()
 {
     VkResult result = VkResult::VK_SUCCESS;
 
-    if (!pause || step)
+    if (!g_ipause || g_istep)
     {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE,
                         UINT64_MAX);
@@ -271,10 +272,10 @@ void Vk_Jello::drawFrame()
         recreateSwapChain();
 
         // Unpause for 1 frame, and restore the pause status.
-        int temp_pause = pause;
-        pause = 0;
+        int temp_pause = g_ipause;
+        g_ipause = 0;
         drawFrame();
-        pause = temp_pause;
+        g_ipause = temp_pause;
     }
     else if (result != VK_SUCCESS)
     {
@@ -1920,19 +1921,19 @@ void Vk_Jello::recordCommandBuffer(VkCommandBuffer commandBuffer,
     {
         if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.structural.startIndex)
         {
-            if (!structural) continue;
+            if (!g_istructural) continue;
             pipelinePushConstantFs.usePcColor = true;
             pipelinePushConstantFs.color = k_jelloStructuralLineColor;
         }
         else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.shear.startIndex)
         {
-            if (!shear) continue;
+            if (!g_ishear) continue;
             pipelinePushConstantFs.usePcColor = true;
             pipelinePushConstantFs.color = k_jelloShearLineColor;
         }
         else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.bend.startIndex)
         {
-            if (!bend) continue;
+            if (!g_ibend) continue;
             pipelinePushConstantFs.usePcColor = true;
             pipelinePushConstantFs.color = k_jelloBendLineColor;
         }

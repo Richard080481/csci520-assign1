@@ -25,18 +25,6 @@
 
 #define PI 3.141592653589793238462643383279
 
-// camera angles
-extern double Theta;
-extern double Phi;
-extern double R;
-
-// number of images saved to disk so far
-extern int sprite;
-
-// mouse control
-extern int g_vMousePos[2];
-extern int g_iLeftMouseButton, g_iMiddleMouseButton, g_iRightMouseButton;
-
 struct point
 {
     double x;
@@ -45,9 +33,15 @@ struct point
 };
 
 // these variables control what is displayed on the screen
-extern int shear, bend, structural, pause, viewingMode, saveScreenToFile;
+extern int g_ishear;
+extern int g_ibend;
+extern int g_istructural;
+extern int g_ipause;
+extern int g_iviewingMode;
+extern int g_isaveScreenToFile;
 
-extern int step, physics;
+extern int g_istep; // render number of frames and stop
+extern int g_iphysics; // do physics
 
 struct world
 {
