@@ -6,7 +6,11 @@
 */
 
 #include "showCube.h"
-#include "jello.h"
+
+#include <cstdio>
+
+#include "types.h"
+#include "utils.h"
 
 #if !VULKAN_BUILD
 int pointMap(int side, int i, int j)

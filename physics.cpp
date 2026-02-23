@@ -6,7 +6,10 @@
 */
 
 #include "physics.h"
-#include "jello.h"
+
+#include <math.h>
+
+#include "utils.h"
 
 /* Computes acceleration to every control point of the jello cube,
    which is in state given by 'jello'.

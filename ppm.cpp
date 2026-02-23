@@ -1,8 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <sys/types.h>
-#include <ctype.h>
+
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
 #include <string>
 
 #include "pic.h"

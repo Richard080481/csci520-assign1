@@ -8,8 +8,7 @@
 #ifndef _PHYSICS_H_
 #define _PHYSICS_H_
 
-#include "jello.h"
-
+#include "types.h"
 void computeAcceleration(struct world* jello,
                          struct point a[JELLO_SUBPOINTS][JELLO_SUBPOINTS][JELLO_SUBPOINTS]);
 

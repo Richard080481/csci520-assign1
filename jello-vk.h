@@ -2,26 +2,20 @@
 #define VK_JELLO_H_
 
 #if _M_X64
-#define NOMINMAX
-#define GLFW_INCLUDE_VULKAN
 #include <algorithm>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <limits>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <vector>
 #include <array>
-#include <fstream>
+#include <iostream>
+#include <optional>
+#include <vector>
+
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <chrono>
-#include "jello.h"
+
+#include "types.h"
 
 #define VK_PI 3.141592653589793238462643383279
 
@@ -294,5 +288,5 @@ private:
         VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator);
 };
-#endif // #if USE_GLUT
+#endif // #if _M_X64
 #endif // #ifndef VK_JELLO_H

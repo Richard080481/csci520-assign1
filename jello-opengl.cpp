@@ -8,8 +8,11 @@
 
 */
 
+#include "jello-opengl.h"
+
 #include <assert.h>
-#include "jello.h"
+#include <math.h>
+
 #include "input.h"
 #include "physics.h"
 #include "showCube.h"

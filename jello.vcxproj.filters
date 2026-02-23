@@ -21,7 +21,7 @@
     <ClInclude Include="input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="jello.h">
+    <ClInclude Include="jello-opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="openGL-headers.h">
@@ -36,10 +36,13 @@
     <ClInclude Include="showCube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vk_jello.h">
+    <ClInclude Include="jello-vk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,7 +65,7 @@
     <ClCompile Include="showCube.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vk_jello.cpp">
+    <ClCompile Include="jello-vk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -151,13 +151,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="input.h" />
-    <ClInclude Include="jello.h" />
+    <ClInclude Include="jello-opengl.h" />
     <ClInclude Include="openGL-headers.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="pic.h" />
     <ClInclude Include="showCube.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="vk_jello.h" />
+    <ClInclude Include="jello-vk.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="input.cpp" />
@@ -166,7 +167,7 @@
     <ClCompile Include="pic.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="showCube.cpp" />
-    <ClCompile Include="vk_jello.cpp" />
+    <ClCompile Include="jello-vk.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="compile_shaders.bat" />

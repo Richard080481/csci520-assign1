@@ -13,6 +13,7 @@
 #define USE_GLUT 0
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define NOMINMAX
 #include "Windows.h"
 #else // #if VULKAN_BUILD
 #define USE_GLUT 1
