@@ -21,8 +21,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
-#include "types.h"
-#include "physics.h"
+#include "jello.h"
 
 #define VK_PI 3.141592653589793238462643383279
 
