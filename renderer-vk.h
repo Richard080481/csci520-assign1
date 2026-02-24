@@ -40,11 +40,8 @@ struct SwapChainSupportDetails
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-struct Vertex
+namespace VertexHelper
 {
-    glm::vec3 pos;
-    glm::vec3 color;
-
     static VkVertexInputBindingDescription getBindingDescription()
     {
         VkVertexInputBindingDescription bindingDescription{};
@@ -90,10 +87,12 @@ public:
     void render() override;
     void cleanup() override;
 
-    void setFramebufferResized(bool resized)
-    {
-        m_framebufferResized = resized;
-    }
+    void setFramebufferResized(bool resized) override;
+    void updateIndexBufferInfo(IndexBufferInfo indexBufferInfo) override;
+    void updateIndexCount(const std::vector<uint16_t>& jelloIndices) override;
+    void updateIndexData(const std::vector<uint16_t>& jelloIndices) override;
+    void updateVertexCount(const std::vector<Vertex>& jelloVertices) override;
+    void updateVertexData(const std::vector<Vertex>& jelloVertices) override;
 
   private:
     void createInstance();
@@ -134,9 +133,7 @@ public:
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createBoundingBoxIndexBuffer();
 
-    void initJelloVertexIndexBuffers();
     void createJelloVertexBuffer();
-    void createJelloIndexBuffer();
     void createUniformBuffers();
     void createDescriptorPool();
     void createDescriptorSets();
@@ -199,28 +196,10 @@ public:
     VkBuffer                        m_boundingBoxIndexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory                  m_boundingBoxIndexBufferMemory = VK_NULL_HANDLE;
 
-    std::vector<Vertex>             m_jelloVertices;
-    std::vector<uint16_t>           m_jelloIndices;
+    size_t                          m_jelloVertexCount = 0;
+    size_t                          m_jelloIndexCount = 0;
 
-    struct IndexBufferInfoEntry
-    {
-        size_t startIndex;
-        size_t count;
-    };
-
-    struct IndexBufferInfo
-    {
-        IndexBufferInfoEntry points;
-        IndexBufferInfoEntry structural;
-        IndexBufferInfoEntry shear;
-        IndexBufferInfoEntry bend;
-        size_t size()
-        {
-            return points.count + structural.count + shear.count + bend.count;
-        }
-    };
-    
-    IndexBufferInfo                 m_jelloIndexBufferInfos = {};
+    IndexBufferInfo                 m_jelloIndexBufferInfo = {};
     VkBuffer                        m_jelloVertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory                  m_jelloVertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer                        m_jelloIndexBuffer = VK_NULL_HANDLE;
@@ -232,7 +211,7 @@ public:
 
     VkDescriptorPool                m_descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet>    m_descriptorSets;
-    
+
     std::vector<VkSemaphore>        m_imageAvailableSemaphores;
     std::vector<VkSemaphore>        m_renderFinishedSemaphores;
     std::vector<VkFence>            m_inFlightFences;

@@ -1,7 +1,7 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#define NEW_VULKAN 0
+#define NEW_VULKAN 1
 
 // Use glut on 32-bit Windows, and use GLFW on 64-bit Windows and all other platforms. This is because the 64-bit version of glut is old and does not support modern OpenGL features, which causes compilation errors on 64-bit Windows. On 32-bit Windows, we
 // can use the newer version of glut without issues. However, for Vulkan build, we should use GLFW.

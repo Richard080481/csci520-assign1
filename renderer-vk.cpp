@@ -69,12 +69,10 @@ void Renderer_VK::init()
     createLineGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
-    initBoundingBoxVertexIndexBuffers();
+    initBoundingBoxVertexIndexBuffers(); ///@todo move to the scene class, and only initialize once.
     createBoundingBoxVertexBuffer();
     createBoundingBoxIndexBuffer();
-    initJelloVertexIndexBuffers();
     createJelloVertexBuffer();
-    createJelloIndexBuffer();
     createUniformBuffers();
     createDescriptorPool();
     createDescriptorSets();
@@ -286,6 +284,58 @@ static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
+}
+
+void Renderer_VK::setFramebufferResized(bool resized)
+{
+    m_framebufferResized = resized;
+}
+
+void Renderer_VK::updateIndexBufferInfo(IndexBufferInfo indexBufferInfo)
+{
+    m_jelloIndexBufferInfo = indexBufferInfo;
+}
+
+void Renderer_VK::updateIndexCount(const std::vector<uint16_t>& jelloIndices)
+{
+    m_jelloIndexCount = jelloIndices.size();
+}
+
+void Renderer_VK::updateIndexData(const std::vector<uint16_t>& jelloIndices)
+{
+    assert(m_jelloIndexCount == jelloIndices.size());
+    VkDeviceSize bufferSize = sizeof(uint16_t) * m_jelloIndexCount;
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    void* pData;
+    vkMapMemory(m_device, stagingBufferMemory, 0, sizeof(jelloIndices[0]) * jelloIndices.size(), 0, &pData);
+    memcpy(pData, jelloIndices.data(), sizeof(jelloIndices[0]) * jelloIndices.size());
+    vkUnmapMemory(m_device, stagingBufferMemory);
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_jelloIndexBuffer, m_jelloIndexBufferMemory);
+
+    copyBuffer(stagingBuffer, m_jelloIndexBuffer, bufferSize);
+
+    vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+    vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+}
+
+void Renderer_VK::updateVertexCount(const std::vector<Vertex>& jelloVertices)
+{
+    m_jelloVertexCount = jelloVertices.size();
+}
+
+void Renderer_VK::updateVertexData(const std::vector<Vertex>& jelloVertices)
+{
+    assert(m_jelloVertexBufferMemory != VK_NULL_HANDLE);
+    assert(m_jelloVertexCount == jelloVertices.size());
+    void* pData;
+    vkMapMemory(m_device, m_jelloVertexBufferMemory, 0, sizeof(jelloVertices[0]) * jelloVertices.size(), 0, &pData);
+    memcpy(pData, jelloVertices.data(), sizeof(jelloVertices[0]) * jelloVertices.size());
+    vkUnmapMemory(m_device, m_jelloVertexBufferMemory);
 }
 
 void Renderer_VK::createInstance()
@@ -913,8 +963,8 @@ void Renderer_VK::createPointGraphicsPipeline()
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VertexHelper::getBindingDescription();
+    auto attributeDescriptions = VertexHelper::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -1029,8 +1079,8 @@ void Renderer_VK::createLineGraphicsPipeline()
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VertexHelper::getBindingDescription();
+    auto attributeDescriptions = VertexHelper::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -1320,6 +1370,7 @@ void Renderer_VK::createBuffer(
     VkBuffer&               buffer,
     VkDeviceMemory&         bufferMemory)
 {
+    assert(size != 0);
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -1406,201 +1457,13 @@ void Renderer_VK::createBoundingBoxIndexBuffer()
     vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
-void Renderer_VK::initJelloVertexIndexBuffers()
-{
-#if 0
-    constexpr int JELLO_SUBDIVISIONS = 7;
-    constexpr int JELLO_SUBPOINTS = 8;
-
-    const glm::vec3 black = {0.0f, 0.0f, 0.0f};
-    std::vector<Vertex> jelloVertices;
-    std::vector<uint16_t> jelloIndices[4];
-    int currentIndex = 0;
-
-    // isOnSurface(x, y, z) checks if the point at (x, y, z) is on the surface of the jello cube
-    auto isOnSurface = [](int x, int y, int z) -> bool
-    {
-        return (x * y * z * (JELLO_SUBDIVISIONS - x) * (JELLO_SUBDIVISIONS - y) * (JELLO_SUBDIVISIONS - z) == 0);
-    };
-
-    // calIndex(i, j, k) is used to map the 3D indices (i, j, k) to a unique integer index for the LUT
-    auto calIndex = [](int i, int j, int k) -> int
-    {
-        return i * JELLO_SUBPOINTS * JELLO_SUBPOINTS + j * JELLO_SUBPOINTS + k;
-    };
-
-    std::unordered_map<int, int> LUT;
-
-    for (int i = 0; i < JELLO_SUBPOINTS; i++)
-    {
-        for (int j = 0; j < JELLO_SUBPOINTS; j++)
-        {
-            for (int k = 0; k < JELLO_SUBPOINTS; k++)
-            {
-                if (isOnSurface(i, j, k))
-                {
-                    Vertex vertex =
-                    {
-                        {
-                            jello.p[i][j][k].x,
-                            jello.p[i][j][k].y,
-                            jello.p[i][j][k].z
-                        },
-                        black
-                    };
-
-                    // Vertices
-                    jelloVertices.push_back(vertex);
-
-                    // Points
-                    jelloIndices[0].push_back(currentIndex);
-
-                    // Add to LUT
-                    LUT[calIndex(i, j, k)] = currentIndex;
-
-                    currentIndex++;
-                }
-            }
-        }
-    }
-
-    auto addLine = [&](std::vector<uint16_t>& container, int i, int j, int k, int t, int u, int v)
-        {
-           if ((i >= 0 && i < JELLO_SUBPOINTS) &&
-               (j >= 0 && j < JELLO_SUBPOINTS) &&
-               (k >= 0 && k < JELLO_SUBPOINTS) &&
-               (t >= 0 && t < JELLO_SUBPOINTS) &&
-               (u >= 0 && u < JELLO_SUBPOINTS) &&
-               (v >= 0 && v < JELLO_SUBPOINTS) &&
-               isOnSurface(t, u, v) &&
-               LUT.find(calIndex(i, j, k)) != LUT.end() &&
-               LUT.find(calIndex(t, u, v)) != LUT.end())
-            {
-                container.push_back(LUT[calIndex(i, j, k)]);
-                container.push_back(LUT[calIndex(t, u, v)]);
-            }
-        };
-
-    // Structural lines
-    for (int i = 0; i < JELLO_SUBPOINTS; i++)
-    {
-        for (int j = 0; j < JELLO_SUBPOINTS; j++)
-        {
-            for (int k = 0; k < JELLO_SUBPOINTS; k++)
-            {
-                if (isOnSurface(i, j, k))
-                {
-                    addLine(jelloIndices[1], i, j, k, i+1, j  , k  );
-                    addLine(jelloIndices[1], i, j, k, i  , j+1, k  );
-                    addLine(jelloIndices[1], i, j, k, i  , j  , k+1);
-                }
-            }
-        }
-    }
-
-    // Shear lines
-    for (int i = 0; i < JELLO_SUBPOINTS; i++)
-    {
-        for (int j = 0; j < JELLO_SUBPOINTS; j++)
-        {
-            for (int k = 0; k < JELLO_SUBPOINTS; k++)
-            {
-                if (isOnSurface(i, j, k))
-                {
-                    addLine(jelloIndices[2], i, j, k, i+1, j+1, k  );
-                    addLine(jelloIndices[2], i, j, k, i  , j+1, k+1);
-                    addLine(jelloIndices[2], i, j, k, i+1, j  , k+1);
-
-                    addLine(jelloIndices[2], i+1, j  , k  , i  , j+1, k  );
-                    addLine(jelloIndices[2], i  , j+1, k  , i  , j  , k+1);
-                    addLine(jelloIndices[2], i  , j  , k+1, i+1, j  , k  );
-                }
-            }
-        }
-    }
-
-    // Bend lines
-    for (int i = 0; i < JELLO_SUBPOINTS; i++)
-    {
-        for (int j = 0; j < JELLO_SUBPOINTS; j++)
-        {
-            for (int k = 0; k < JELLO_SUBPOINTS; k++)
-            {
-                if (isOnSurface(i, j, k))
-                {
-                    addLine(jelloIndices[3], i, j, k, i+2, j  , k  );
-                    addLine(jelloIndices[3], i, j, k, i  , j+2, k  );
-                    addLine(jelloIndices[3], i, j, k, i  , j  , k+2);
-                }
-            }
-        }
-    }
-
-    m_jelloIndexBufferInfos.points.startIndex     = 0;
-    m_jelloIndexBufferInfos.points.count          = jelloIndices[0].size();
-    m_jelloIndexBufferInfos.structural.startIndex = m_jelloIndexBufferInfos.points.startIndex + m_jelloIndexBufferInfos.points.count;
-    m_jelloIndexBufferInfos.structural.count      = jelloIndices[1].size();
-    m_jelloIndexBufferInfos.shear.startIndex      = m_jelloIndexBufferInfos.structural.startIndex + m_jelloIndexBufferInfos.structural.count;
-    m_jelloIndexBufferInfos.shear.count           = jelloIndices[2].size();
-    m_jelloIndexBufferInfos.bend.startIndex       = m_jelloIndexBufferInfos.shear.startIndex + m_jelloIndexBufferInfos.shear.count;
-    m_jelloIndexBufferInfos.bend.count            = jelloIndices[3].size();
-
-    m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
-    memcpy(m_jelloVertices.data(), jelloVertices.data(),
-           jelloVertices.size() * sizeof(jelloVertices[0]));
-
-    m_jelloIndices.clear();
-    m_jelloIndices.reserve(m_jelloIndexBufferInfos.size() * sizeof(jelloIndices[0]));
-    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[0].begin(), jelloIndices[0].end());
-    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[1].begin(), jelloIndices[1].end());
-    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[2].begin(), jelloIndices[2].end());
-    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices[3].begin(), jelloIndices[3].end());
-#else
-    m_jelloIndexBufferInfos.structural.startIndex = 0;
-    m_jelloIndexBufferInfos.structural.count      = 0;
-    m_jelloIndexBufferInfos.shear.startIndex      = 0;
-    m_jelloIndexBufferInfos.shear.count           = 0;
-    m_jelloIndexBufferInfos.bend.startIndex       = 0;
-    m_jelloIndexBufferInfos.bend.count            = 0;
-
-    const std::vector<Vertex> jelloVertices =
-    {
-        {
-            {-0.5f, -0.5f, 0.5f},
-            {1.0f, 0.0f, 0.0f}
-        },
-        {
-            {0.5f, -0.5f, 0.5f},
-            {0.0f, 1.0f, 0.0f}
-        },
-        {
-            {0.5f, 0.5f, 0.5f},
-            {0.0f, 0.0f, 1.0f}
-        },
-        {
-            {-0.5f, 0.5f, 0.5f},
-            {1.0f, 1.0f, 1.0f}
-        }
-    };
-
-    const std::vector<uint16_t> jelloIndices = {0, 1, 2, 3};
-
-    m_jelloIndexBufferInfos.points.startIndex = 0;
-    m_jelloIndexBufferInfos.points.count      = jelloIndices.size();
-
-    m_jelloVertices.clear();
-    m_jelloVertices.insert(m_jelloVertices.end(), jelloVertices.begin(), jelloVertices.end());
-
-    m_jelloIndices.clear();
-    m_jelloIndices.insert(m_jelloIndices.end(), jelloIndices.begin(), jelloIndices.end());
-#endif
-}
-
 void Renderer_VK::createJelloVertexBuffer()
 {
+    assert(m_jelloVertexCount != 0);
+
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(m_jelloVertices[0]) * m_jelloVertices.size();
+    bufferInfo.size = sizeof(Vertex) * m_jelloVertexCount;
     bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -1625,32 +1488,6 @@ void Renderer_VK::createJelloVertexBuffer()
     }
 
     vkBindBufferMemory(m_device, m_jelloVertexBuffer, m_jelloVertexBufferMemory, 0);
-
-    void* data;
-    vkMapMemory(m_device, m_jelloVertexBufferMemory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, m_jelloVertices.data(), (size_t)bufferInfo.size);
-    vkUnmapMemory(m_device, m_jelloVertexBufferMemory);
-}
-
-void Renderer_VK::createJelloIndexBuffer()
-{
-    VkDeviceSize bufferSize = sizeof(m_jelloIndices[0]) * m_jelloIndices.size();
-
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-    void* data;
-    vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, m_jelloIndices.data(), (size_t)bufferSize);
-    vkUnmapMemory(m_device, stagingBufferMemory);
-
-    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_jelloIndexBuffer, m_jelloIndexBufferMemory);
-
-    copyBuffer(stagingBuffer, m_jelloIndexBuffer, bufferSize);
-
-    vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-    vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
 void Renderer_VK::createUniformBuffers()
@@ -1912,7 +1749,7 @@ void Renderer_VK::recordCommandBuffer(uint32_t m_currentFrame, uint32_t imageInd
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, jelloVertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer, m_jelloIndexBufferInfos.points.startIndex * sizeof(uint16_t), VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer, m_jelloIndexBuffer, m_jelloIndexBufferInfo.points.startIndex * sizeof(uint16_t), VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 
@@ -1920,7 +1757,7 @@ void Renderer_VK::recordCommandBuffer(uint32_t m_currentFrame, uint32_t imageInd
         m_pipelinePushConstantFs.color = k_jelloPointColor;
         vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PipelinePushConstantFs), &m_pipelinePushConstantFs);
 
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_jelloIndexBufferInfos.points.count),
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_jelloIndexBufferInfo.points.count),
                          1,  // instanceCount
                          0,  // firstIndex
                          0,  // vertexOffset
@@ -1932,23 +1769,23 @@ void Renderer_VK::recordCommandBuffer(uint32_t m_currentFrame, uint32_t imageInd
     extern int g_ibend;
 
     // Draw structural and shear lines
-    for (auto& indexBufferInfo : {m_jelloIndexBufferInfos.structural, m_jelloIndexBufferInfos.shear, m_jelloIndexBufferInfos.bend})
+    for (auto& indexBufferInfo : {m_jelloIndexBufferInfo.structural, m_jelloIndexBufferInfo.shear, m_jelloIndexBufferInfo.bend})
     {
-        if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.structural.startIndex)
+        if (indexBufferInfo.startIndex == m_jelloIndexBufferInfo.structural.startIndex)
         {
             if (!g_istructural)
                 continue;
             m_pipelinePushConstantFs.usePcColor = true;
             m_pipelinePushConstantFs.color = k_jelloStructuralLineColor;
         }
-        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.shear.startIndex)
+        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfo.shear.startIndex)
         {
             if (!g_ishear)
                 continue;
             m_pipelinePushConstantFs.usePcColor = true;
             m_pipelinePushConstantFs.color = k_jelloShearLineColor;
         }
-        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfos.bend.startIndex)
+        else if (indexBufferInfo.startIndex == m_jelloIndexBufferInfo.bend.startIndex)
         {
             if (!g_ibend)
                 continue;
