@@ -5,8 +5,8 @@
 #include <unordered_map>
 
 #include "input.h"
-#include "jello.h"
 #include "physics.h"
+#include "utils.h"
 
 #if VULKAN_BUILD
 
@@ -18,26 +18,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
-}
-
-static std::vector<char> readFile(const std::string& filename)
-{
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open())
-    {
-        throw std::runtime_error("failed to open file!");
-    }
-
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-
-    return buffer;
 }
 
 VkResult CreateDebugUtilsMessengerEXT(
@@ -69,7 +49,7 @@ void Vk_Jello::DestroyDebugUtilsMessengerEXT(
     }
 }
 
-void Vk_Jello::Vk_Jello::initWindow()
+void Vk_Jello::initWindow()
 {
     glfwInit();
 
@@ -101,7 +81,7 @@ void Vk_Jello::Vk_Jello::initWindow()
     });
 }
 
-void Vk_Jello::Vk_Jello::initVulkan()
+void Vk_Jello::initVulkan()
 {
     createInstance();
     setupDebugMessenger();
@@ -361,7 +341,7 @@ void Vk_Jello::cleanup()
 
     vkDestroyDevice(device, nullptr);
 
-    if (enableValidationLayers)
+    if (k_enableValidationLayers)
     {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
@@ -374,9 +354,39 @@ void Vk_Jello::cleanup()
     glfwTerminate();
 }
 
+static bool checkValidationLayerSupport()
+{
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : k_validationLayers)
+    {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers)
+        {
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void Vk_Jello::createInstance()
 {
-    if (enableValidationLayers && !checkValidationLayerSupport())
+    if (k_enableValidationLayers && !checkValidationLayerSupport())
     {
         throw std::runtime_error(
             "validation layers requested, but not available!");
@@ -399,11 +409,11 @@ void Vk_Jello::createInstance()
     createInfo.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers)
+    if (k_enableValidationLayers)
     {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+            static_cast<uint32_t>(k_validationLayers.size());
+        createInfo.ppEnabledLayerNames = k_validationLayers.data();
 
         populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.pNext =
@@ -439,7 +449,7 @@ void Vk_Jello::populateDebugMessengerCreateInfo(
 
 void Vk_Jello::setupDebugMessenger()
 {
-    if (!enableValidationLayers)
+    if (!k_enableValidationLayers)
         return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -520,14 +530,14 @@ void Vk_Jello::createLogicalDevice()
     createInfo.pEnabledFeatures = &deviceFeatures;
 
     createInfo.enabledExtensionCount =
-        static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        static_cast<uint32_t>(k_deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = k_deviceExtensions.data();
 
-    if (enableValidationLayers)
+    if (k_enableValidationLayers)
     {
         createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+            static_cast<uint32_t>(k_validationLayers.size());
+        createInfo.ppEnabledLayerNames = k_validationLayers.data();
     }
     else
     {
@@ -1355,7 +1365,7 @@ void Vk_Jello::updateJelloVertexBuffers()
         }
     }
 
-    m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
+    m_jelloVertices.resize(jelloVertices.size());
     memcpy(m_jelloVertices.data(), jelloVertices.data(),
            jelloVertices.size() * sizeof(jelloVertices[0]));
 }
@@ -1495,7 +1505,7 @@ void Vk_Jello::initJelloVertexIndexBuffers()
     m_jelloIndexBufferInfos.bend.startIndex       = m_jelloIndexBufferInfos.shear.startIndex + m_jelloIndexBufferInfos.shear.count;
     m_jelloIndexBufferInfos.bend.count            = jelloIndices[3].size();
 
-    m_jelloVertices.resize(jelloVertices.size() * sizeof(jelloVertices[0]));
+    m_jelloVertices.resize(jelloVertices.size());
     memcpy(m_jelloVertices.data(), jelloVertices.data(),
            jelloVertices.size() * sizeof(jelloVertices[0]));
 
@@ -2097,8 +2107,8 @@ bool Vk_Jello::checkDeviceExtensionSupport(VkPhysicalDevice device)
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
                                          availableExtensions.data());
 
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(),
-                                             deviceExtensions.end());
+    std::set<std::string> requiredExtensions(k_deviceExtensions.begin(),
+                                             k_deviceExtensions.end());
 
     for (const auto& extension : availableExtensions)
     {
@@ -2157,7 +2167,7 @@ std::vector<const char*> Vk_Jello::getRequiredExtensions()
     std::vector<const char*> extensions(glfwExtensions,
                                         glfwExtensions + glfwExtensionCount);
 
-    if (enableValidationLayers)
+    if (k_enableValidationLayers)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -2165,36 +2175,7 @@ std::vector<const char*> Vk_Jello::getRequiredExtensions()
     return extensions;
 }
 
-bool Vk_Jello::checkValidationLayerSupport()
-{
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : validationLayers)
-    {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers)
-        {
-            if (strcmp(layerName, layerProperties.layerName) == 0)
-            {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
+#if !NEW_VULKAN
 int main(int argc, char** argv)
 {
     if (argc < 2)
@@ -2205,10 +2186,8 @@ int main(int argc, char** argv)
         exit(0);
     }
 
-    readWorld(argv[1], &jello);
-
     Vk_Jello app;
-    app.jello = jello;
+    readWorld(argv[1], &app.jello);
 
     try
     {
@@ -2222,5 +2201,6 @@ int main(int argc, char** argv)
 
     return EXIT_SUCCESS;
 }
+#endif // #if !NEW_VULKAN
 #endif // #if VULKAN_BUILD
 

@@ -1,5 +1,5 @@
-#ifndef VK_JELLO_H_
-#define VK_JELLO_H_
+#ifndef _JELLO_VK_H_
+#define _JELLO_VK_H_
 
 #if _M_X64
 #include <algorithm>
@@ -22,14 +22,13 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-
-const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+const std::vector<const char*> k_validationLayers = {"VK_LAYER_KHRONOS_validation"};
+const std::vector<const char*> k_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+const bool k_enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+const bool k_enableValidationLayers = true;
 #endif
 
 struct QueueFamilyIndices
@@ -282,11 +281,10 @@ private:
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     std::vector<const char*> getRequiredExtensions();
-    bool checkValidationLayerSupport();
 
     void DestroyDebugUtilsMessengerEXT(
         VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator);
 };
 #endif // #if _M_X64
-#endif // #ifndef VK_JELLO_H
+#endif // #ifndef VK_JELLO_H_

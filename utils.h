@@ -2,6 +2,8 @@
 #define _UTILS_H_
 
 #include <cmath>
+#include <vector>
+#include <fstream>
 
 // computes crossproduct of two vectors, which are specified as points, and stores the result into dest
 // struct point vector1, vector2, dest
@@ -69,5 +71,26 @@
     (dest).x = (src).x * (scalar);                                                                                                                                                                                                                             \
     (dest).y = (src).y * (scalar);                                                                                                                                                                                                                             \
     (dest).z = (src).z * (scalar);
+
+
+static std::vector<char> readFile(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error("failed to open file!");
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+
+    return buffer;
+}
 
 #endif // #ifndef _UTILS_H_

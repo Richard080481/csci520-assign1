@@ -43,7 +43,7 @@ int pointMap(int side, int i, int j)
     return r;
 }
 
-void showCube(struct world* jello)
+void showCube(struct world* m_jello)
 {
     int i, j, k, ip, jp, kp;
     point r1, r2, r3; // aux variables
@@ -55,13 +55,13 @@ void showCube(struct world* jello)
     int face;
     double faceFactor, length;
 
-    if (fabs(jello->p[0][0][0].x) > 10)
+    if (fabs(m_jello->p[0][0][0].x) > 10)
     {
         printf("Your cube somehow escaped way out of the box.\n");
         exit(0);
     }
 
-#define NODE(face, i, j) (*((struct point*)(jello->p) + pointMap((face), (i), (j))))
+#define NODE(face, i, j) (*((struct point*)(m_jello->p) + pointMap((face), (i), (j))))
 
 #define PROCESS_NEIGHBOUR(di, dj, dk)                                                              \
     ip = i + (di);                                                                                 \
@@ -74,8 +74,8 @@ void showCube(struct world* jello)
         ((ip == 0) || (ip == JELLO_SUBDIVISIONS) || (jp == 0) || (jp == JELLO_SUBDIVISIONS) ||     \
          (kp == 0) || (kp == JELLO_SUBDIVISIONS)))                                                 \
     {                                                                                              \
-        glVertex3f(jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);                 \
-        glVertex3f(jello->p[ip][jp][kp].x, jello->p[ip][jp][kp].y, jello->p[ip][jp][kp].z);        \
+        glVertex3f(m_jello->p[i][j][k].x, m_jello->p[i][j][k].y, m_jello->p[i][j][k].z);                 \
+        glVertex3f(m_jello->p[ip][jp][kp].x, m_jello->p[ip][jp][kp].y, m_jello->p[ip][jp][kp].z);        \
     }
 
     if (g_iviewingMode == 0) // render wireframe
@@ -94,7 +94,7 @@ void showCube(struct world* jello)
 
                     glBegin(GL_POINTS); // draw point
                     glColor4f(0, 0, 0, 0);
-                    glVertex3f(jello->p[i][j][k].x, jello->p[i][j][k].y, jello->p[i][j][k].z);
+                    glVertex3f(m_jello->p[i][j][k].x, m_jello->p[i][j][k].y, m_jello->p[i][j][k].z);
                     glEnd();
 
                     //

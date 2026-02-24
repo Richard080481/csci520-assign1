@@ -45,7 +45,10 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="jello.h">
+    <ClInclude Include="jelloApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer-vk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,7 +74,13 @@
     <ClCompile Include="jello-vk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="jello.cpp">
+    <ClCompile Include="jelloApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer-vk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

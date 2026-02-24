@@ -14,7 +14,7 @@
 #include <math.h>
 
 #include "input.h"
-#include "jello.h"
+#include "jelloApp.h"
 #include "physics.h"
 #include "pic.h"
 #include "showCube.h"
@@ -22,6 +22,9 @@
 static int g_iwindowWidth, g_iwindowHeight;
 
 #if !VULKAN_BUILD
+
+struct world g_jello;
+
 void myinit()
 {
     glMatrixMode(GL_PROJECTION);
@@ -174,7 +177,7 @@ void display()
     glEnable(GL_DEPTH_TEST);
 
     // show the cube
-    showCube(&jello);
+    showCube(&g_jello);
 
     glDisable(GL_LIGHTING);
 
@@ -246,13 +249,13 @@ void doIdle()
     if (g_ipause == 0)
     {
         // perform one time step of the simulation
-        if (strcmp(jello.integrator, "Euler") == 0)
+        if (strcmp(g_jello.integrator, "Euler") == 0)
         {
-            Euler(&jello);
+            Euler(&g_jello);
         }
         else
         {
-            RK4(&jello);
+            RK4(&g_jello);
         }
     }
 
@@ -267,13 +270,13 @@ int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        printf("Oops! You didn't say the jello world file!\n");
+        printf("Oops! You didn't say the g_jello world file!\n");
         printf("Usage: %s [worldfile]\n", argv[0]);
-        assert(0 && "Oops! You didn't say the jello world file!");
+        assert(0 && "Oops! You didn't say the g_jello world file!");
         exit(0);
     }
 
-    readWorld(argv[1], &jello);
+    readWorld(argv[1], &g_jello);
 
     g_iwindowWidth = 640;
     g_iwindowHeight = 480;

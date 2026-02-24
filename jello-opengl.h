@@ -5,8 +5,8 @@
 
 */
 
-#ifndef _JELLO_H_
-#define _JELLO_H_
+#ifndef _JELLO_OPENGL_H_
+#define _JELLO_OPENGL_H_
 
 #include "pic.h"
 #include <stdio.h>
@@ -15,5 +15,5 @@
 #include "input.h"
 #include "types.h"
 
-#endif // #ifndef _JELLO_H_
+#endif // #ifndef _JELLO_OPENGL_H_
 
