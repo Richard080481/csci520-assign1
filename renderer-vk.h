@@ -121,9 +121,8 @@ public:
     void createPipelineLayout();
 
     VkShaderModule createShaderModule(const std::vector<char>& code);
-    void createPointGraphicsPipeline();
 
-    void createLineGraphicsPipeline();
+    void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
     void initBoundingBoxVertexIndexBuffers();
@@ -176,8 +175,7 @@ public:
     PipelinePushConstantFs          m_pipelinePushConstantFs = {};
     VkPipelineLayout                m_pipelineLayout = VK_NULL_HANDLE;
 
-    VkPipeline                      m_pointGraphicsPipeline = VK_NULL_HANDLE;
-    VkPipeline                      m_lineGraphicsPipeline = VK_NULL_HANDLE;
+    VkPipeline                      m_graphicsPipeline = VK_NULL_HANDLE;
 
     VkCommandPool                   m_commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer>    m_commandBuffers;
